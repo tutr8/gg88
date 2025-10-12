@@ -124,7 +124,7 @@ export default function ChatRoom() {
   }
 
   return (
-    <div className="min-h-[793px] bg-[hsl(217,33%,9%)] text-white">
+    <div className="min-h-[793px] bg-[hsl(217,33%,9%)] text-white -mb-[2px]">
       <div className="mx-auto flex h-[781px] w-full max-w-2xl flex-col px-4 py-6">
         <div className="mb-3 text-lg font-semibold">
           {conversation?.title ||
