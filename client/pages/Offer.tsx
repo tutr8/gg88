@@ -102,7 +102,11 @@ export default function OfferPage() {
                       });
                       const jSelf = await rSelf.json();
                       if (!rSelf.ok) throw new Error(jSelf?.error || "failed");
-                      const idSelf = jSelf?.order?.id;
+                      const idSelf =
+                        jSelf?.conversation?.id ??
+                        (typeof jSelf?.conversationId === "string"
+                          ? jSelf.conversationId
+                          : null);
                       if (!idSelf) throw new Error("no_self_chat");
                       navigate(`/chat/${idSelf}`);
                       return;
