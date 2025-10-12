@@ -124,8 +124,8 @@ export default function ChatRoom() {
   }
 
   return (
-    <div className="min-h-[795px] bg-[hsl(217,33%,9%)] text-white -mb-[2px]">
-      <div className="mx-auto flex h-[720px] min-h-0 w-full max-w-2xl flex-col px-4 py-6">
+    <div className="min-h-[780px] bg-[hsl(217,33%,9%)] text-white -mb-[2px]">
+      <div className="mx-auto flex h-[700px] min-h-0 w-full max-w-2xl flex-col px-4 py-6">
         <div className="mb-3 text-lg font-semibold">
           {conversation?.title ||
             (conversation?.kind === "favorites" ? "Favorites" : "Chat")}
