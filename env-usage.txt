@@ -1,0 +1,19 @@
+Environment variables usage map
+
+Centralized config: server/config.ts
+- DATABASE_URL
+- TON_API_BASE
+- TON_API_KEY
+- PING_MESSAGE
+- PORT
+- ADMIN_SECRET
+
+Referenced by:
+- server/lib/prisma.ts (DATABASE_URL)
+- server/routes/offers.ts (TON_API_BASE, TON_API_KEY)
+- api/ton/info.ts (TON_API_BASE, TON_API_KEY)
+- server/index.ts (PING_MESSAGE)
+- server/node-build.ts (PORT)
+- server/routes/admin.ts (ADMIN_SECRET)
+- prisma/schema.prisma (DATABASE_URL)
+- db.js (DATABASE_URL)

@@ -1,0 +1,31 @@
+{
+  "buildCommand": "pnpm run prisma:generate && pnpm prisma db push && pnpm run build:client",
+  "outputDirectory": "dist/spa",
+  "framework": null,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    {
+      "source": "/tonconnect-manifest.json",
+      "destination": "/api/ton/manifest"
+    },
+    { "source": "/api/icon.png", "destination": "/api/icon.png" },
+    { "source": "/placeholder.svg", "destination": "/placeholder.svg" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/tonconnect-manifest.json",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json; charset=utf-8" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    },
+    {
+      "source": "/api/ton/manifest",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json; charset=utf-8" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    }
+  ]
+}

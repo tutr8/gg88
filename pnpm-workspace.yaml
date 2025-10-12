@@ -1,0 +1,9 @@
+version: 1
+packages:
+  - .
+onlyBuiltDependencies:
+  - "@prisma/client"
+  - "@prisma/engines"
+  - "prisma"
+  - "esbuild"
+  - "@swc/core"

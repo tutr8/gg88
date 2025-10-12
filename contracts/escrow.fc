@@ -1,0 +1,111 @@
+;; Escrow per-order contract (testnet)
+;; Storage layout:
+;;  cell: (maker_addr, taker_addr, treasury_addr, price_nano, n_percent, maker_conf, taker_conf, admin_pubkey)
+;; Minimal skeleton, not audited.
+
+#include <stdlib.fc>
+
+const OP_DEPOSIT_MAKER = 0x1001;
+const OP_TAKE = 0x1002;
+const OP_CONFIRM = 0x1003;
+const OP_CANCEL = 0x1004;
+const OP_ADMIN_FORCE = 0x1005;
+
+(int, slice, slice, slice, int, int, int, int) load_storage() inline {
+  var cs = get_data().begin_parse();
+  var maker = cs~load_msg_addr();
+  var taker = cs~load_msg_addr();
+  var treasury = cs~load_msg_addr();
+  var price = cs~load_coins();
+  var n_percent = cs~load_uint(16);
+  var maker_conf = cs~load_uint(1);
+  var taker_conf = cs~load_uint(1);
+  var admin_key = cs~load_uint(256);
+  return (price, maker, taker, treasury, n_percent, maker_conf, taker_conf, admin_key);
+}
+
+save_storage(slice maker, slice taker, slice treasury, int price, int n_percent, int maker_conf, int taker_conf, int admin_key) inline {
+  var b = begin_cell();
+  b = b.store_slice(maker);
+  b = b.store_slice(taker);
+  b = b.store_slice(treasury);
+  b = b.store_coins(price);
+  b = b.store_uint(n_percent, 16);
+  b = b.store_uint(maker_conf, 1);
+  b = b.store_uint(taker_conf, 1);
+  b = b.store_uint(admin_key, 256);
+  set_data(b.end_cell());
+}
+
+() recv_internal(int in_msg_value, cell in_msg, slice in_msg_body) {
+  var op = 0;
+  if (slice_bits(in_msg_body) >= 32) {
+    op = in_msg_body~load_uint(32);
+  }
+  var (price, maker, taker, treasury, n_percent, maker_conf, taker_conf, admin_key) = load_storage();
+
+  ;; Maker deposit (100%+n%)
+  if (op == OP_DEPOSIT_MAKER) {
+    ;; naive check: value >= price * (100 + n)/100
+    var min = (price * (100 + n_percent)) / 100;
+    throw_if(101, in_msg_value < min);
+    maker_conf = 0; taker_conf = 0;
+    save_storage(maker, taker, treasury, price, n_percent, maker_conf, taker_conf, admin_key);
+    return();
+  }
+
+  ;; Taker stake (20%)
+  if (op == OP_TAKE) {
+    var stake = (price * 20) / 100;
+    throw_if(102, in_msg_value < stake);
+    ;; mark taker if empty
+    if (slice_bits(taker) == 2) {
+      ;; keep taker as-is (set externally during deploy for strict binding)
+    }
+    save_storage(maker, taker, treasury, price, n_percent, maker_conf, taker_conf, admin_key);
+    return();
+  }
+
+  ;; Confirm from maker/taker (body 1 byte role)
+  if (op == OP_CONFIRM) {
+    var role = in_msg_body~load_uint(8);
+    if (role == 1) { maker_conf = 1; }
+    if (role == 2) { taker_conf = 1; }
+    if ((maker_conf & taker_conf) == 1) {
+      ;; payout 120% to taker, n% to treasury
+      var bonus = (price * 120) / 100;
+      var fee = (price * n_percent) / 100;
+      ;; send to taker
+      var msg1 = begin_cell().store_uint(0x18, 6).store_slice(taker).store_coins(bonus).store_uint(0, 1).end_cell();
+      send_raw_message(msg1, 64);
+      ;; send fee to treasury
+      var msg2 = begin_cell().store_uint(0x18, 6).store_slice(treasury).store_coins(fee).store_uint(0, 1).end_cell();
+      send_raw_message(msg2, 64);
+    }
+    save_storage(maker, taker, treasury, price, n_percent, maker_conf, taker_conf, admin_key);
+    return();
+  }
+
+  ;; Admin force (release=1, cancel=2) with pubkey signature (omitted in skeleton)
+  if (op == OP_ADMIN_FORCE) {
+    var what = in_msg_body~load_uint(8);
+    if (what == 1) {
+      var bonus = (price * 120) / 100;
+      var fee = (price * n_percent) / 100;
+      var msg1 = begin_cell().store_uint(0x18, 6).store_slice(taker).store_coins(bonus).store_uint(0, 1).end_cell();
+      send_raw_message(msg1, 64);
+      var msg2 = begin_cell().store_uint(0x18, 6).store_slice(treasury).store_coins(fee).store_uint(0, 1).end_cell();
+      send_raw_message(msg2, 64);
+    }
+    if (what == 2) {
+      ;; refund maker 100% and taker 20%
+      var maker_refund = price;
+      var taker_refund = (price * 20) / 100;
+      var m1 = begin_cell().store_uint(0x18, 6).store_slice(maker).store_coins(maker_refund).store_uint(0, 1).end_cell();
+      send_raw_message(m1, 64);
+      var m2 = begin_cell().store_uint(0x18, 6).store_slice(taker).store_coins(taker_refund).store_uint(0, 1).end_cell();
+      send_raw_message(m2, 64);
+    }
+    return();
+  }
+}

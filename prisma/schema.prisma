@@ -1,0 +1,317 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OfferStatus {
+  open
+  taken
+  done
+}
+
+enum UserType {
+  freelancer
+  employer
+}
+
+enum JobStatus {
+  open
+  in_progress
+  completed
+}
+
+enum OrderStatus {
+  created
+  in_progress
+  completed
+  cancelled
+}
+
+enum ConversationKind {
+  order
+  favorites
+}
+
+enum InboxChannel {
+  chat
+  toast
+  email
+  push
+  log
+}
+
+enum InboxImportance {
+  low
+  normal
+  high
+  critical
+}
+
+enum InboxType {
+  message
+  system
+  reminder
+  alert
+}
+
+enum InboxStatus {
+  pending
+  delivering
+  delivered
+  failed
+}
+
+enum PiiClass {
+  none
+  personal
+  sensitive
+}
+
+enum ParticipantRole {
+  maker
+  taker
+  owner
+  system
+}
+
+model User {
+  id        String   @id @default(cuid())
+  address   String?  @unique
+  createdAt DateTime @default(now())
+
+  // Profile extensions
+  name        String?
+  avatarUrl   String?
+  type        UserType?
+  nickname    String?  @unique
+  skills      String[] @default([])
+  experience  String?
+  reputation  Float    @default(0)
+  joinedDate  DateTime @default(now())
+  bio         String?  @default("")
+
+  // Relations
+  offers           Offer[]
+  reviews          Review[] @relation("ReviewAuthor")
+  reviewsWritten   Review[] @relation("ReviewReviewer")
+  reviewsReceived  Review[] @relation("ReviewReviewee")
+  jobsPosted       Job[]    @relation("UserJobsAsEmployer")
+  jobsTaken        Job[]    @relation("UserJobsAsFreelancer")
+  conversationsOwned Conversation[]        @relation("ConversationOwner")
+  conversationParticipants ConversationParticipant[] @relation("ParticipantUser")
+  inboxItems       InboxItem[]            @relation("InboxUser")
+  auditLogs        AuditLog[]             @relation("AuditUser")
+}
+
+model Offer {
+  id          String       @id @default(cuid())
+  title       String
+  description String?      @default("")
+  budgetTON   Float
+  status      OfferStatus  @default(open)
+  createdAt   DateTime     @default(now())
+  creatorId   String?
+  creator     User?        @relation(fields: [creatorId], references: [id])
+  reviews     Review[]     @relation("OfferReviews")
+  orders      Order[]
+
+  @@index([createdAt])
+}
+
+model Job {
+  id           String     @id @default(cuid())
+  title        String
+  description  String
+  requirements String[]   @default([])
+  payment      Float
+  status       JobStatus  @default(open)
+  postedDate   DateTime   @default(now())
+
+  employerId String
+  employer   User        @relation("UserJobsAsEmployer", fields: [employerId], references: [id])
+
+  freelancerId String?
+  freelancer   User?       @relation("UserJobsAsFreelancer", fields: [freelancerId], references: [id])
+
+  reviews Review[]
+
+  @@index([postedDate])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  // Link to Offer (legacy)
+  offerId String?
+  offer   Offer?   @relation("OfferReviews", fields: [offerId], references: [id])
+
+  // Link to Job (new)
+  jobId String?
+  job   Job?     @relation(fields: [jobId], references: [id])
+
+  // Participants
+  authorId   String?
+  author     User?    @relation("ReviewAuthor", fields: [authorId], references: [id])
+
+  reviewerId String?
+  reviewer   User?    @relation("ReviewReviewer", fields: [reviewerId], references: [id])
+
+  revieweeId String?
+  reviewee   User?    @relation("ReviewReviewee", fields: [revieweeId], references: [id])
+
+  // Explicit date field matching TS type
+  date DateTime @default(now())
+}
+
+model Order {
+  id             String       @id @default(cuid())
+  title          String
+  offerId        String?
+  offer          Offer?       @relation(fields: [offerId], references: [id])
+  makerAddress   String
+  takerAddress   String?
+  priceTON       Float
+  nPercent       Float        @default(1)
+  makerDeposit   Float        @default(0)
+  takerStake     Float        @default(0)
+  status         OrderStatus  @default(created)
+  makerConfirmed Boolean      @default(false)
+  takerConfirmed Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  completedAt    DateTime?
+  cancelledAt    DateTime?
+  contractAddr   String?
+
+  conversation   Conversation? @relation("OrderConversation")
+  inboxThreads   InboxThread[]
+  inboxItems     InboxItem[]    @relation("OrderInboxItems")
+
+  @@index([makerAddress])
+  @@index([takerAddress])
+  @@index([status, createdAt])
+}
+
+model Conversation {
+  id            String               @id @default(cuid())
+  kind          ConversationKind
+  orderId       String? @unique
+  ownerId       String?
+  owner         User?                @relation("ConversationOwner", fields: [ownerId], references: [id])
+  order         Order?               @relation("OrderConversation", fields: [orderId], references: [id])
+  tenantId      String?
+  metadata      Json?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  lastMessageAt DateTime?
+  dedupeHash    String?
+
+  participants ConversationParticipant[]
+  items        InboxItem[]
+  threads      InboxThread[]
+
+  @@index([kind, lastMessageAt])
+  @@index([tenantId])
+  @@index([ownerId])
+  @@unique([ownerId, kind])
+}
+
+model ConversationParticipant {
+  id             String           @id @default(cuid())
+  conversationId String
+  conversation   Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?            @relation("ParticipantUser", fields: [userId], references: [id])
+  address        String
+  role           ParticipantRole
+  notificationMuted Boolean      @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([conversationId, address])
+  @@index([address])
+}
+
+model InboxItem {
+  id               String          @id @default(cuid())
+  tenantId         String?
+  conversationId   String?
+  conversation     Conversation?   @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  threadId         String?
+  thread           InboxThread?    @relation(fields: [threadId], references: [id], onDelete: SetNull)
+  orderId          String?
+  order            Order?          @relation("OrderInboxItems", fields: [orderId], references: [id], onDelete: SetNull)
+  userId           String?
+  user             User?           @relation("InboxUser", fields: [userId], references: [id])
+  address          String?
+  type             InboxType
+  importance       InboxImportance @default(normal)
+  channel          InboxChannel    @default(chat)
+  lang             String          @default("en")
+  content          Json
+  encryptedContent Json?
+  meta             Json?
+  classification   String[]        @default([])
+  piiClass         PiiClass        @default(none)
+  status           InboxStatus     @default(pending)
+  dedupeKey        String?
+  retryCount       Int             @default(0)
+  nextAttemptAt    DateTime?
+  deliveredAt      DateTime?
+  readAt           DateTime?
+  readBy           String[]        @default([])
+  expiresAt        DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([conversationId, createdAt])
+  @@index([threadId, createdAt])
+  @@index([orderId])
+  @@index([tenantId])
+  @@index([status, nextAttemptAt])
+  @@unique([dedupeKey])
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  actorAddress  String?
+  actorUserId   String?
+  actorUser     User?    @relation("AuditUser", fields: [actorUserId], references: [id])
+  action        String
+  entityType    String
+  entityId      String?
+  metadata      Json?
+  tenantId      String?
+  createdAt     DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([tenantId, createdAt])
+}
+
+model InboxThread {
+  id             String        @id @default(cuid())
+  tenantId       String?
+  conversationId String?
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  orderId        String?
+  order          Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  title          String?
+  metadata       Json?
+  dedupeHash     String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  items InboxItem[]
+
+  @@index([conversationId])
+  @@index([orderId])
+  @@index([tenantId])
+  @@unique([conversationId, orderId])
+}
