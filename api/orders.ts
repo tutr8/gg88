@@ -1,4 +1,4 @@
-import { prisma } from "./_prisma";
+import { prisma } from "../shared/prisma";
 import { N_PERCENT } from "./_config";
 
 function ok(res: any, data: any, code = 200) {
