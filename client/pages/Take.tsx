@@ -71,7 +71,7 @@ export default function Take() {
 
   return (
     <div className="min-h-[calc(100dvh-160px)] bg-[hsl(217,33%,9%)] text-white">
-      <div className="mx-auto w-full max-w-2xl px-4 pt-6 pb-28">
+      <div className="mx-auto w-full max-w-2xl px-4 pt-6 pb-6">
         <h1 className="text-3xl font-bold">Take</h1>
         <p className="mt-2 text-white/70">
           Browse and accept offers. Escrow-backed payments ensure risk‑free
@@ -155,7 +155,7 @@ export default function Take() {
                   </div>
                   <div className="flex items-center justify-between text-xs text-white/60">
                     <div>
-                      {o.budgetTON} TON •{" "}
+                      {o.budgetTON} TON ��{" "}
                       {new Date(o.createdAt).toLocaleDateString()}
                     </div>
                     <Button
