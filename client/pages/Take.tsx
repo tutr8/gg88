@@ -87,7 +87,7 @@ export default function Take() {
           />
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 mb-32"> {/* ДОБАВЛЕНО: mb-32 */}
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 mb-16"> {/* ДОБАВЛЕНО: mb-32 */}
           {loading &&
             Array.from({ length: 6 }).map((_, i) => (
               <div

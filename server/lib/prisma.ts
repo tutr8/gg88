@@ -1,14 +1,5 @@
-import { mockPrisma } from "./mock-prisma";
-import pkg from "@prisma/client";
+import sharedPrisma from "../../shared/prisma";
 
-let prisma: any = mockPrisma;
-try {
-  const { PrismaClient } = pkg as any;
-  prisma = new PrismaClient();
-} catch (e) {
-  // Fallback to in-memory mock when Prisma client isn't available
-  prisma = mockPrisma;
-}
+export const prisma = sharedPrisma;
 
-export { prisma };
-export default prisma;
+export default sharedPrisma;

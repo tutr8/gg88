@@ -1,4 +1,4 @@
-import { prisma } from "./_prisma";
+import { prisma } from "../shared/prisma";
 
 function allow(res: any) {
   res.setHeader("Access-Control-Allow-Origin", "*");
