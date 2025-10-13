@@ -120,7 +120,9 @@ export default function Index() {
   }, [q, stack, minBudget, maxBudget]);
 
   return (
-    <div className="min-h-[calc(100dvh-160px)] bg-[hsl(217,33%,9%)] text-white pb-32"> {/* Увеличил до pb-32 */}
+    <div className="min-h-[calc(100dvh-160px)] bg-[hsl(217,33%,9%)] text-white pb-32">
+      {" "}
+      {/* Увеличил до pb-32 */}
       <div className="mx-auto w-full max-w-md px-4 py-8 sm:py-10">
         <div className="flex justify-center">
           <div className="relative">
@@ -199,7 +201,7 @@ export default function Index() {
         )}
 
         <h2 className="mt-6 text-xs font-semibold uppercase tracking-wider text-white/60">
-          My bots
+          <p>My job listings</p>
         </h2>
 
         <div className="mt-2 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
