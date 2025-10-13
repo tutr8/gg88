@@ -70,8 +70,8 @@ export default function Take() {
   }, [q]);
 
   return (
-    <div className="min-h-screen bg-[hsl(217,33%,9%)] text-white pb-140"> {/* ИЗМЕНЕНИЕ: убрал calc и увеличил отступ */}
-      <div className="mx-auto w-full max-w-2xl px-4 pt-6 pb-124"> {/* ИЗМЕНЕНИЕ: увеличил внутренний отступ */}
+    <div className="min-h-screen bg-[hsl(217,33%,9%)] text-white">
+      <div className="mx-auto w-full max-w-2xl px-4 pt-6">
         <h1 className="text-3xl font-bold">Take</h1>
         <p className="mt-2 text-white/70">
           Browse and accept offers. Escrow-backed payments ensure risk‑free
@@ -87,7 +87,7 @@ export default function Take() {
           />
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 mb-8"> {/* ИЗМЕНЕНИЕ: добавил отступ снизу к grid */}
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 mb-32"> {/* ДОБАВЛЕНО: mb-32 */}
           {loading &&
             Array.from({ length: 6 }).map((_, i) => (
               <div
@@ -183,6 +183,9 @@ export default function Take() {
             </div>
           ))}
         </div>
+        
+        {/* ДОБАВЛЕНО: Пустой div для создания дополнительного пространства */}
+        <div className="h-32"></div>
       </div>
     </div>
   );
