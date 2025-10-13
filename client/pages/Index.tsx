@@ -120,8 +120,8 @@ export default function Index() {
   }, [q, stack, minBudget, maxBudget]);
 
   return (
-    <div className="min-h-[calc(100dvh-160px)] bg-[hsl(217,33%,9%)] text-white">
-      <div className="mx-auto w-full max-w-md px-4 py-8 sm:py-10">
+    <div className="min-h-[calc(100dvh-140px)] bg-[hsl(217,33%,9%)] text-white pb-6"> {/* Увеличил нижний отступ */}
+      <div className="mx-auto w-full max-w-md px-4 py-6 sm:py-8"> {/* Уменьшил верхний отступ */}
         <div className="flex justify-center">
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-primary/20 blur-lg" />
@@ -133,7 +133,7 @@ export default function Index() {
           </div>
         </div>
 
-        <h1 className="mt-5 text-center text-2xl font-bold tracking-tight">
+        <h1 className="mt-4 text-center text-2xl font-bold tracking-tight"> {/* Уменьшил отступ сверху */}
           FreelTON
         </h1>
         <div className="mt-2 text-center text-sm text-white/70 space-y-1">
@@ -146,7 +146,7 @@ export default function Index() {
           </a>
         </div>
 
-        <div className="mt-6 relative">
+        <div className="mt-4 relative"> {/* Уменьшил отступ сверху */}
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/40" />
           <Input
             value={q}
@@ -198,7 +198,7 @@ export default function Index() {
           </div>
         )}
 
-        <h2 className="mt-6 text-xs font-semibold uppercase tracking-wider text-white/60">
+        <h2 className="mt-4 text-xs font-semibold uppercase tracking-wider text-white/60"> {/* Уменьшил отступ сверху */}
           My bots
         </h2>
 
@@ -222,7 +222,7 @@ export default function Index() {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4"> {/* Добавил нижний отступ к grid */}
           {loading &&
             Array.from({ length: 6 }).map((_, i) => (
               <div
