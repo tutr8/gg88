@@ -53,7 +53,7 @@ export default function OfferPage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-[hsl(217,33%,9%)] text-white">
+    <div className="min-h-[calc(100dvh-160px)] bg-[hsl(217,33%,9%)] text-white">
       <div className="mx-auto w-full max-w-2xl px-4 py-10">
         <div className="mb-4 text-sm text-white/60">
           <Link to="/take" className="hover:underline">
