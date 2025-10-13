@@ -12,7 +12,9 @@ export default function Learn() {
           <div className="rounded-xl border border-white/10 bg-white/5 p-4">
             <div className="font-semibold">Getting Started with TON</div>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-white/70">
-              <li>Create a wallet (Tonkeeper/Tonhub) and back up the seed phrase.</li>
+              <li>
+                Create a wallet (Tonkeeper/Tonhub) and back up the seed phrase.
+              </li>
               <li>Connect your wallet using the button in the header.</li>
               <li>Fund your wallet with a small amount of TON for fees.</li>
             </ul>
