@@ -67,24 +67,29 @@ export default function Header({ children }: { children?: React.ReactNode }) {
   return (
     <TonConnectUIProvider manifestUrl={manifestUrl}>
       <UpsertOnConnect />
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-[hsl(217,33%,9%)]/80 backdrop-blur">
-        <div
-          className={`mx-auto ${topOffsetClass} flex h-14 w-full max-w-5xl items-center justify-between px-4`}
-        >
-          <Link
-            to="/"
-            className="text-sm font-semibold text-white/80 hover:text-white"
+      <div className="flex min-h-dvh flex-col bg-[hsl(217,33%,9%)] text-white">
+        <header className="sticky top-0 z-30 border-b border-white/10 bg-[hsl(217,33%,9%)]/80 backdrop-blur">
+          <div
+            className={`mx-auto ${topOffsetClass} flex h-14 w-full max-w-5xl items-center justify-between px-4`}
           >
-            FreelTON
-          </Link>
-          <div className="w-fit">
-            <TonConnectButton className="[&_*]:!font-medium" />
+            <Link
+              to="/"
+              className="text-sm font-semibold text-white/80 hover:text-white"
+            >
+              FreelTON
+            </Link>
+            <div className="w-fit">
+              <TonConnectButton className="[&_*]:!font-medium" />
+            </div>
           </div>
-        </div>
-      </header>
-      {children}
-      <div className="h-[100px]" />
-      <BottomNav />
+        </header>
+        <main className="flex-1">
+          {children}
+        </main>
+        <footer className="mt-auto">
+          <BottomNav />
+        </footer>
+      </div>
     </TonConnectUIProvider>
   );
 }

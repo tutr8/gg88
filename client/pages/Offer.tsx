@@ -53,7 +53,7 @@ export default function OfferPage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-[hsl(217,33%,9%)] text-white">
+    <div className="min-h-[calc(100dvh-160px)] bg-[hsl(217,33%,9%)] text-white">
       <div className="mx-auto w-full max-w-2xl px-4 py-10">
         <div className="mb-4 text-sm text-white/60">
           <Link to="/take" className="hover:underline">
@@ -102,7 +102,11 @@ export default function OfferPage() {
                       });
                       const jSelf = await rSelf.json();
                       if (!rSelf.ok) throw new Error(jSelf?.error || "failed");
-                      const idSelf = jSelf?.order?.id;
+                      const idSelfRaw =
+                        jSelf?.conversation?.id ??
+                        jSelf?.conversationId ??
+                        null;
+                      const idSelf = idSelfRaw ? String(idSelfRaw) : null;
                       if (!idSelf) throw new Error("no_self_chat");
                       navigate(`/chat/${idSelf}`);
                       return;

@@ -1,6 +1,6 @@
 export default function Learn() {
   return (
-    <div className="min-h-screen bg-[hsl(217,33%,9%)] text-white">
+    <div className="min-h-[calc(100dvh-160px)] bg-[hsl(217,33%,9%)] text-white">
       <div className="mx-auto w-full max-w-2xl px-4 py-10">
         <h1 className="text-3xl font-bold">Learn</h1>
         <p className="mt-2 text-white/70">
@@ -12,7 +12,9 @@ export default function Learn() {
           <div className="rounded-xl border border-white/10 bg-white/5 p-4">
             <div className="font-semibold">Getting Started with TON</div>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-white/70">
-              <li>Create a wallet (Tonkeeper/Tonhub) and back up the seed phrase.</li>
+              <li>
+                Create a wallet (Tonkeeper/Tonhub) and back up the seed phrase.
+              </li>
               <li>Connect your wallet using the button in the header.</li>
               <li>Fund your wallet with a small amount of TON for fees.</li>
             </ul>

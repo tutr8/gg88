@@ -124,13 +124,16 @@ export default function ChatRoom() {
   }
 
   return (
-    <div className="min-h-screen bg-[hsl(217,33%,9%)] text-white">
-      <div className="mx-auto flex h-[calc(100vh-100px)] w-full max-w-2xl flex-col px-4 py-6">
-        <div className="mb-3 text-lg font-semibold">
+    <div className="h-screen bg-[hsl(217,33%,9%)] text-white flex flex-col">
+      <div className="flex-1 min-h-0 w-full max-w-2xl mx-auto flex flex-col px-4 py-4">
+        {/* Заголовок - компактный */}
+        <div className="mb-2 text-lg font-semibold truncate flex-shrink-0">
           {conversation?.title ||
             (conversation?.kind === "favorites" ? "Favorites" : "Chat")}
         </div>
-        <div className="flex-1 space-y-2 overflow-y-auto rounded-lg border border-white/10 bg-white/5 p-3">
+        
+        {/* Область сообщений - занимает основное пространство */}
+        <div className="flex-1 min-h-0 space-y-1 overflow-y-auto rounded-lg border border-white/10 bg-white/5 p-3">
           {loading && <div className="text-white/70">Loading…</div>}
           {error && !loading && <div className="text-white/70">{error}</div>}
           {!loading && !error && messages.length === 0 && (
@@ -142,8 +145,8 @@ export default function ChatRoom() {
               const mine = me && m.sender && me === m.sender;
               return (
                 <div key={m.id} className={mine ? "text-right" : "text-left"}>
-                  <div className="inline-block max-w-[85%] rounded-lg bg-white/10 px-3 py-2 text-sm">
-                    <div className="opacity-70 text-[11px]">
+                  <div className="inline-block max-w-[85%] rounded-lg bg-white/10 px-3 py-1 text-sm">
+                    <div className="opacity-70 text-[10px]">
                       {mine ? "You" : m.sender.slice(0, 6) + "…"}
                     </div>
                     <div className="whitespace-pre-wrap">{m.text}</div>
@@ -153,14 +156,19 @@ export default function ChatRoom() {
             })}
           <div ref={bottomRef} />
         </div>
-        <div className="mt-3 flex gap-2">
+        
+        {/* Поле ввода - компактное */}
+        <div className="mt-2 flex gap-2 flex-shrink-0">
           <Input
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Write a message…"
-            className="bg-white/5 text-white border-white/10"
+            className="bg-white/5 text-white border-white/10 h-8 text-sm"
           />
-          <Button onClick={send} className="bg-primary text-primary-foreground">
+          <Button 
+            onClick={send} 
+            className="bg-primary text-primary-foreground h-8 px-3 text-sm"
+          >
             Send
           </Button>
         </div>
