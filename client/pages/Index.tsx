@@ -199,7 +199,7 @@ export default function Index() {
         )}
 
         <h2 className="mt-6 text-xs font-semibold uppercase tracking-wider text-white/60">
-          My bots
+          <p>My job listings</p>
         </h2>
 
         <div className="mt-2 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
