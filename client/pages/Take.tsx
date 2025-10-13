@@ -70,8 +70,8 @@ export default function Take() {
   }, [q]);
 
   return (
-    <div className="min-h-[calc(100dvh-160px)] bg-[hsl(217,33%,9%)] text-white pb-64">
-      <div className="mx-auto w-full max-w-2xl px-4 pt-6 pb-12">
+    <div className="min-h-screen bg-[hsl(217,33%,9%)] text-white pb-40"> {/* ИЗМЕНЕНИЕ: убрал calc и увеличил отступ */}
+      <div className="mx-auto w-full max-w-2xl px-4 pt-6 pb-24"> {/* ИЗМЕНЕНИЕ: увеличил внутренний отступ */}
         <h1 className="text-3xl font-bold">Take</h1>
         <p className="mt-2 text-white/70">
           Browse and accept offers. Escrow-backed payments ensure risk‑free
@@ -87,7 +87,7 @@ export default function Take() {
           />
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4">
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 mb-8"> {/* ИЗМЕНЕНИЕ: добавил отступ снизу к grid */}
           {loading &&
             Array.from({ length: 6 }).map((_, i) => (
               <div
@@ -155,7 +155,7 @@ export default function Take() {
                   </div>
                   <div className="flex items-center justify-between text-xs text-white/60">
                     <div>
-                      {o.budgetTON} TON ��{" "}
+                      {o.budgetTON} TON •{" "}
                       {new Date(o.createdAt).toLocaleDateString()}
                     </div>
                     <Button
