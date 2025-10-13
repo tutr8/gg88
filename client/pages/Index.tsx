@@ -120,7 +120,7 @@ export default function Index() {
   }, [q, stack, minBudget, maxBudget]);
 
   return (
-    <div className="min-h-screen bg-[hsl(217,33%,9%)] text-white">
+    <div className="min-h-[calc(100dvh-160px)] bg-[hsl(217,33%,9%)] text-white">
       <div className="mx-auto w-full max-w-md px-4 py-8 sm:py-10">
         <div className="flex justify-center">
           <div className="relative">
