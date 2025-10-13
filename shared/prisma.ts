@@ -12,7 +12,9 @@ const globalForPrisma = globalThis as GlobalWithPrisma;
 
 const createPrismaClient = (): PrismaLike => {
   try {
-    const { PrismaClient } = pkg as { PrismaClient: new (...args: any[]) => PrismaClientType };
+    const { PrismaClient } = pkg as {
+      PrismaClient: new (...args: any[]) => PrismaClientType;
+    };
     return new PrismaClient();
   } catch (_error) {
     return mockPrisma;
@@ -20,6 +22,7 @@ const createPrismaClient = (): PrismaLike => {
 };
 
 export const prisma: PrismaLike =
-  globalForPrisma.__fusionPrisma ?? (globalForPrisma.__fusionPrisma = createPrismaClient());
+  globalForPrisma.__fusionPrisma ??
+  (globalForPrisma.__fusionPrisma = createPrismaClient());
 
 export default prisma;
