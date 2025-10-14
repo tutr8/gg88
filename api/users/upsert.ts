@@ -1,5 +1,5 @@
 // ПРАВИЛЬНО
-import prisma from '../../shared/prisma';
+import prisma from '../shared/prisma';
 import { Address } from "@ton/core";
 
 export default async function handler(req: any, res: any) {
