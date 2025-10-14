@@ -1,4 +1,4 @@
-import { prisma } from "../_prisma";
+import { prisma } from "./api/_prisma";
 import { Address } from "@ton/core";
 
 export default async function handler(req: any, res: any) {
