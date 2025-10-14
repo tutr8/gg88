@@ -1,4 +1,4 @@
-import { prisma } from "../_prisma";
+import { prisma } from "../prisma";
 import { ADMIN_WHITELIST } from "../_config";
 
 function allowCORS(res: any) {
