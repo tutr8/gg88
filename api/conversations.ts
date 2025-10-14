@@ -7,7 +7,9 @@ function allowCORS(res: any) {
 }
 
 function normalizeAddress(address: string) {
-  return String(address || "").trim().toLowerCase();
+  return String(address || "")
+    .trim()
+    .toLowerCase();
 }
 
 async function ensureFavoritesConversation(address: string) {
@@ -49,7 +51,8 @@ async function ensureFavoritesConversation(address: string) {
 export default async function handler(req: any, res: any) {
   allowCORS(res);
   if (req.method === "OPTIONS") return res.status(204).end();
-  if (req.method !== "GET") return res.status(405).json({ error: "method_not_allowed" });
+  if (req.method !== "GET")
+    return res.status(405).json({ error: "method_not_allowed" });
 
   try {
     const raw = String((req.query?.address as string) || "");
@@ -88,10 +91,16 @@ export default async function handler(req: any, res: any) {
         orderId: convo.orderId,
         updatedAt: convo.updatedAt,
         lastMessage: lastMessage
-          ? { text: (lastMessage as any).content?.args?.text || "", createdAt: lastMessage.createdAt }
+          ? {
+              text: (lastMessage as any).content?.args?.text || "",
+              createdAt: lastMessage.createdAt,
+            }
           : null,
         unreadCount: unreadTotal,
-        participants: convo.participants.map((p) => ({ address: p.address, role: p.role })),
+        participants: convo.participants.map((p) => ({
+          address: p.address,
+          role: p.role,
+        })),
         metadata: convo.metadata ?? {},
       });
     }

@@ -7,13 +7,16 @@ function allowCORS(res: any) {
 }
 
 function normalizeAddress(address: string) {
-  return String(address || "").trim().toLowerCase();
+  return String(address || "")
+    .trim()
+    .toLowerCase();
 }
 
 export default async function handler(req: any, res: any) {
   allowCORS(res);
   if (req.method === "OPTIONS") return res.status(204).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "method_not_allowed" });
+  if (req.method !== "POST")
+    return res.status(405).json({ error: "method_not_allowed" });
 
   try {
     const addressRaw =
