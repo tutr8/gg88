@@ -1,4 +1,4 @@
-import pkg from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import type { PrismaClient as PrismaClientType } from "@prisma/client";
 import { mockPrisma } from "../server/lib/mock-prisma";
 
@@ -12,9 +12,6 @@ const globalForPrisma = globalThis as GlobalWithPrisma;
 
 const createPrismaClient = (): PrismaLike => {
   try {
-    const { PrismaClient } = pkg as {
-      PrismaClient: new (...args: any[]) => PrismaClientType;
-    };
     return new PrismaClient();
   } catch (_error) {
     return mockPrisma;
