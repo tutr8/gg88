@@ -177,20 +177,22 @@ export default function ChatRoom() {
               <div ref={bottomRef} />
             </div>
 
-            <div className="mt-2 flex gap-2 flex-shrink-0">
-              <Input
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Write a message…"
-                className="bg-white/5 text-white border-white/10 h-8 text-sm"
-              />
-              <Button
-                onClick={send}
-                className="bg-primary text-primary-foreground h-8 px-3 text-sm"
-              >
-                Send
-              </Button>
-            </div>
+            {!error && (
+              <div className="mt-2 flex gap-2 flex-shrink-0">
+                <Input
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="Write a message…"
+                  className="bg-white/5 text-white border-white/10 h-8 text-sm"
+                />
+                <Button
+                  onClick={send}
+                  className="bg-primary text-primary-foreground h-8 px-3 text-sm"
+                >
+                  Send
+                </Button>
+              </div>
+            )}
           </>
         )}
       </div>
