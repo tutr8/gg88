@@ -19,6 +19,10 @@ import { isEncryptionActive, wrapContent } from "./encryption";
 import { captureError, traceMessage } from "./observability";
 import { messageRateLimiter, RateLimiter } from "./rate-limit";
 import { writeAuditLog } from "./audit";
+import {
+  ensureParticipantAccess,
+  normalizeAddress,
+} from "./conversation-service";
 
 const EMAIL_REGEX = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 const PHONE_REGEX = /\+?\d[\d\s\-()]{8,}/;
@@ -275,6 +279,19 @@ export async function ingestInboxPayload(
   };
 
   const classification = classifyPayload(payload);
+
+  // For chat messages tied to a conversation, enforce membership
+  if (payload.channel === "chat" && payload.conversationId) {
+    const actor = options.actorAddress
+      ? normalizeAddress(options.actorAddress)
+      : "";
+    if (!actor) {
+      const err = new Error("unauthorized");
+      (err as any).statusCode = 401;
+      throw err;
+    }
+    await ensureParticipantAccess(payload.conversationId, actor);
+  }
 
   if (!options.bypassRateLimit) {
     await ensureRateLimit(payload);
