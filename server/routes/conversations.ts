@@ -119,7 +119,14 @@ export const getConversation: RequestHandler = async (req, res) => {
       conversationId: id,
     });
     if (!conversation) return res.status(404).json({ error: "not_found" });
-    await ensureParticipantAccess(conversation.id, address);
+
+    try {
+      await ensureParticipantAccess(conversation.id, address);
+    } catch (err: any) {
+      const status = (err && (err as any).statusCode) || 500;
+      if (status === 403) return res.status(403).json({ error: "forbidden" });
+      throw err;
+    }
 
     const items = await prisma.inboxItem.findMany({
       where: { conversationId: conversation.id },
