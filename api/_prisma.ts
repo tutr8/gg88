@@ -30,7 +30,7 @@ const createPrismaClient = (): PrismaLike => {
   return mockPrisma;
 };
 
-export const prisma: PrismaLike =
+export const prisma: any =
   globalForPrisma.__fusionPrisma ??
   (globalForPrisma.__fusionPrisma = createPrismaClient());
 
