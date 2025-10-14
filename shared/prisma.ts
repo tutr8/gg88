@@ -1,3 +1,4 @@
+import { createRequire } from "module";
 import { mockPrisma } from "../server/lib/mock-prisma";
 
 // Объявляем типы вручную чтобы избежать зависимостей
@@ -19,6 +20,7 @@ const createPrismaClient = (): PrismaLike => {
   if (process.env.NODE_ENV === 'production') {
     try {
       // @ts-ignore - игнорируем проверку типов
+      const require = createRequire(import.meta.url);
       const { PrismaClient } = require('@prisma/client');
       return new PrismaClient();
     } catch (error) {
