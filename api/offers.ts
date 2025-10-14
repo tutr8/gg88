@@ -1,4 +1,4 @@
-import prisma from '../shared/prisma';
+import prisma from './_prisma';
 
 export default async function handler(req: any, res: any) {
   res.setHeader("Access-Control-Allow-Origin", "*");
