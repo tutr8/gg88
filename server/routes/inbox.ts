@@ -40,6 +40,14 @@ export const postInboxItem: RequestHandler = async (req, res) => {
       actorUserId: req.body?.userId,
     });
     const status = result.deduped ? 200 : 201;
+
+    if (!result.deduped) {
+      try {
+        const { notifyNewItem } = await import("../lib/sse");
+        await notifyNewItem(result.item);
+      } catch {}
+    }
+
     res.status(status).json({
       item: mapItem(result.item),
       thread: result.thread,
