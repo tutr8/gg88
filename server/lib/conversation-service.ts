@@ -1,5 +1,4 @@
-import type { Prisma } from "@prisma/client";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { ensureUserByAddress } from "./user-service";
 import { APP_TENANT_ID } from "../config";
