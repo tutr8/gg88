@@ -1,15 +1,30 @@
 import { performance } from "node:perf_hooks";
-import { performance } from "node:perf_hooks";
 import type { IncomingMessage, ServerResponse } from "http";
 import * as Sentry from "@sentry/node";
 
 const SENTRY_DSN = process.env.SENTRY_DSN;
-const isSentryEnabled = () => Boolean(Sentry.getCurrentHub().getClient());
-if (SENTRY_DSN && !isSentryEnabled()) {
-  Sentry.init({
-    dsn: SENTRY_DSN,
-    tracesSampleRate: 0.2,
-  });
+
+// Проверяем инициализацию Sentry более безопасным способом
+const isSentryEnabled = () => {
+  try {
+    return Boolean(SENTRY_DSN && Sentry.getCurrentHub?.().getClient?.());
+  } catch {
+    return false;
+  }
+};
+
+// Инициализируем Sentry если DSN есть и Sentry еще не инициализирован
+if (SENTRY_DSN) {
+  try {
+    if (!isSentryEnabled()) {
+      Sentry.init({
+        dsn: SENTRY_DSN,
+        tracesSampleRate: 0.2,
+      } as any); // Используем any для обхода проблем с типами
+    }
+  } catch (error) {
+    console.error("Failed to initialize Sentry:", error);
+  }
 }
 
 interface MessageMetric {
@@ -31,14 +46,18 @@ export function captureError(
   context?: Record<string, unknown>,
 ) {
   if (isSentryEnabled()) {
-    Sentry.withScope((scope) => {
-      if (context) {
-        Object.entries(context).forEach(([key, value]) =>
-          scope.setContext(key, { value }),
-        );
-      }
-      Sentry.captureException(error);
-    });
+    try {
+      Sentry.withScope((scope) => {
+        if (context) {
+          Object.entries(context).forEach(([key, value]) =>
+            scope.setContext(key, { value }),
+          );
+        }
+        Sentry.captureException(error);
+      });
+    } catch (sentryError) {
+      console.error("Sentry error capture failed:", sentryError);
+    }
   }
 }
 
@@ -114,15 +133,19 @@ export function registerRequestBreadcrumb(
   const start = performance.now();
   res.once("finish", () => {
     const duration = performance.now() - start;
-    Sentry.addBreadcrumb({
-      category: "http",
-      type: "http",
-      data: {
-        method: req.method,
-        url: req.url,
-        statusCode: res.statusCode,
-        duration,
-      },
-    });
+    try {
+      Sentry.addBreadcrumb({
+        category: "http",
+        type: "http",
+        data: {
+          method: req.method,
+          url: req.url,
+          statusCode: res.statusCode,
+          duration,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to add Sentry breadcrumb:", error);
+    }
   });
 }
