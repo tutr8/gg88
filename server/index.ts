@@ -18,6 +18,9 @@ import {
 import { listMessages, createMessage } from "./routes/messages";
 import { listInboxByThread, postInboxItem } from "./routes/inbox";
 import { getConversation, listConversations } from "./routes/conversations";
+import { stream } from "./routes/stream";
+import { postTyping } from "./routes/chat-typing";
+import { postInboxRead } from "./routes/inbox-read";
 
 import { PING_MESSAGE, TON_API_BASE, CORS_ORIGIN } from "./config";
 import { resetDatabase } from "./routes/admin";
@@ -63,9 +66,16 @@ export function createServer() {
   app.get("/api/messages", listMessages);
   app.post("/api/messages", createMessage);
 
+  // Chat typing indicator
+  app.post("/api/chat/typing", postTyping);
+
   // Inbox API
   app.get("/api/inbox", listInboxByThread);
   app.post("/api/inbox", postInboxItem);
+  app.post("/api/inbox/read", postInboxRead);
+
+  // Realtime stream (SSE)
+  app.get("/api/stream", stream);
 
   // Conversation API
   app.get("/api/conversations", listConversations);

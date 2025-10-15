@@ -40,6 +40,14 @@ export const postInboxItem: RequestHandler = async (req, res) => {
       actorUserId: req.body?.userId,
     });
     const status = result.deduped ? 200 : 201;
+
+    if (!result.deduped) {
+      try {
+        const { notifyNewItem } = await import("../lib/sse");
+        await notifyNewItem(result.item);
+      } catch {}
+    }
+
     res.status(status).json({
       item: mapItem(result.item),
       thread: result.thread,
@@ -60,7 +68,9 @@ export const postInboxItem: RequestHandler = async (req, res) => {
 
 export const listInboxByThread: RequestHandler = async (req, res) => {
   try {
-    const threadId = req.query.threadId ? String(req.query.threadId) : undefined;
+    const threadId = req.query.threadId
+      ? String(req.query.threadId)
+      : undefined;
     const conversationId = req.query.conversationId
       ? String(req.query.conversationId)
       : undefined;

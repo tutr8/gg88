@@ -105,6 +105,62 @@ export default function Chat() {
     };
   }, [addr]);
 
+  useEffect(() => {
+    if (!addr) return;
+
+    const src = new EventSource(
+      apiUrl(`/api/stream?address=${encodeURIComponent(addr)}`),
+    );
+
+    const refresh = async () => {
+      try {
+        const urlConversations = apiUrl(
+          `/api/conversations?address=${encodeURIComponent(addr)}`,
+        );
+        const conversationsRes = await fetch(urlConversations);
+        const conversationsJson = conversationsRes.ok
+          ? await conversationsRes.json()
+          : { conversations: [] };
+        const nextConversations = (
+          (conversationsJson.conversations ?? []) as any[]
+        ).map((c) => ({
+          id: String(c.id),
+          kind: String(c.kind),
+          orderId: c.orderId ?? null,
+          updatedAt: String(c.updatedAt ?? new Date().toISOString()),
+          lastMessage: c.lastMessage
+            ? {
+                text: String(c.lastMessage.text || ""),
+                createdAt: String(
+                  c.lastMessage.createdAt || new Date().toISOString(),
+                ),
+              }
+            : null,
+          unreadCount: Number(c.unreadCount ?? 0),
+        }));
+        setConversations(nextConversations);
+      } catch {}
+    };
+
+    const onEvent = (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data || "{}");
+        const type = (data?.type as string) || e.type;
+        if (type !== "chat.message") return;
+        refresh();
+      } catch {}
+    };
+
+    src.addEventListener("chat.message", onEvent as any);
+    src.addEventListener("chat.read", onEvent as any);
+
+    return () => {
+      try {
+        src.close();
+      } catch {}
+    };
+  }, [addr]);
+
   const orderMap = useMemo(() => {
     const map = new Map<string, Order>();
     for (const order of orders) {

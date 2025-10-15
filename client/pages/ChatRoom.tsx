@@ -29,6 +29,8 @@ export default function ChatRoom() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [someoneTyping, setSomeoneTyping] = useState(false);
+  const typingTimers = useRef<Record<string, number>>({});
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const lang = (typeof navigator !== "undefined" && navigator.language) || "en";
@@ -78,6 +80,14 @@ export default function ChatRoom() {
         () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
         50,
       );
+      // Mark as read when loaded
+      try {
+        await fetch(apiUrl(`/api/inbox/read`), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ conversationId: id, address }),
+        });
+      } catch {}
     } finally {
       setLoading(false);
     }
@@ -85,21 +95,62 @@ export default function ChatRoom() {
 
   useEffect(() => {
     if (!id || !me) return;
-    let mounted = true;
-    let timer: number | undefined;
 
-    const tick = async () => {
-      if (!mounted) return;
-      await load(me);
-      if (!mounted) return;
-      timer = window.setTimeout(tick, 4000);
+    load(me);
+
+    const src = new EventSource(
+      apiUrl(`/api/stream?address=${encodeURIComponent(me)}`),
+    );
+
+    const onMessage = (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data || "{}");
+        if (String(data.conversationId || "") !== String(id)) return;
+        const m = data.message || {};
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: String(m.id || Math.random()),
+            sender: String(m.address || ""),
+            text: String(m.text || ""),
+            createdAt: String(m.createdAt || new Date().toISOString()),
+          },
+        ]);
+        setTimeout(
+          () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
+          30,
+        );
+      } catch {}
     };
 
-    tick();
+    const onTyping = (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data || "{}");
+        if (String(data.conversationId || "") !== String(id)) return;
+        const from = String(data.from || "");
+        if (from && from !== me) {
+          setSomeoneTyping(Boolean(data.typing));
+          const timers = typingTimers.current;
+          if (timers[from]) window.clearTimeout(timers[from]);
+          timers[from] = window.setTimeout(() => {
+            setSomeoneTyping(false);
+            delete typingTimers.current[from];
+          }, 3000);
+        }
+      } catch {}
+    };
+
+    src.addEventListener("chat.message", onMessage as any);
+    src.addEventListener("chat.typing", onTyping as any);
 
     return () => {
-      mounted = false;
-      if (timer) window.clearTimeout(timer);
+      try {
+        src.close();
+      } catch {}
+      for (const k of Object.keys(typingTimers.current)) {
+        window.clearTimeout(typingTimers.current[k]);
+      }
+      typingTimers.current = {};
     };
   }, [id, me]);
 
@@ -121,15 +172,51 @@ export default function ChatRoom() {
 
     setText("");
 
-    await fetch(apiUrl(`/api/inbox`), {
+    // Optimistic append
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: String(Math.random()),
+        sender: me,
+        text,
+        createdAt: new Date().toISOString(),
+      },
+    ]);
+    setTimeout(
+      () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
+      10,
+    );
+
+    const res = await fetch(apiUrl(`/api/inbox`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+    try {
+      const data = await res.json();
+      if (data?.item?.id) {
+        setMessages((prev) => {
+          const copy = [...prev];
+          // Replace last optimistic if same sender and text
+          for (let i = copy.length - 1; i >= 0; i--) {
+            if (copy[i].sender === me && copy[i].text === text) {
+              copy[i] = { ...copy[i], id: String(data.item.id) } as any;
+              break;
+            }
+          }
+          return copy;
+        });
+      }
+    } catch {}
 
-    if (me) {
-      await load(me);
-    }
+    // Mark read (self)
+    try {
+      await fetch(apiUrl(`/api/inbox/read`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId: id, address: me }),
+      });
+    } catch {}
   }
 
   return (
@@ -150,6 +237,11 @@ export default function ChatRoom() {
           <>
             <div className="flex-1 min-h-0 space-y-1 overflow-y-auto rounded-lg border border-white/10 bg-white/5 p-3">
               {loading && <div className="text-white/70">Loading…</div>}
+              {!loading && !error && someoneTyping && (
+                <div className="text-white/50 text-xs">
+                  Companion is typing…
+                </div>
+              )}
               {error && !loading && (
                 <div className="text-white/70">{error}</div>
               )}
@@ -177,11 +269,31 @@ export default function ChatRoom() {
               <div ref={bottomRef} />
             </div>
 
+            {someoneTyping && (
+              <div className="mt-2 text-xs text-white/60">Typing…</div>
+            )}
+
             {!error && (
               <div className="mt-2 flex gap-2 flex-shrink-0">
                 <Input
                   value={text}
-                  onChange={(e) => setText(e.target.value)}
+                  onChange={async (e) => {
+                    const v = e.target.value;
+                    setText(v);
+                    try {
+                      if (me && id) {
+                        await fetch(apiUrl(`/api/chat/typing`), {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            address: me,
+                            conversationId: id,
+                            typing: v.length > 0,
+                          }),
+                        });
+                      }
+                    } catch {}
+                  }}
                   placeholder="Write a message…"
                   className="bg-white/5 text-white border-white/10 h-8 text-sm"
                 />
