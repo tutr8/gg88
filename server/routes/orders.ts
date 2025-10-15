@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express";
 import { prisma } from "../lib/prisma";
 import { ADMIN_SECRET } from "../config";
+import { ensureOrderConversation } from "../lib/conversation-service";
 
 const N_PERCENT = 1; // Default commission percent used in calculations
 
@@ -35,6 +36,7 @@ export const createOrder: RequestHandler = async (req, res) => {
       makerAddress: makerRaw = "",
       priceTON,
       offerId = null,
+      takerAddress: takerRaw = "",
     } = req.body ?? {};
     const price = Number(priceTON);
 
@@ -47,6 +49,8 @@ export const createOrder: RequestHandler = async (req, res) => {
       makerAddress = offer?.creator?.address || "";
     }
 
+    const takerAddress = String(takerRaw || "").trim();
+
     if (!title || !Number.isFinite(price) || price <= 0 || !makerAddress) {
       return res.status(400).json({ error: "invalid_payload" });
     }
@@ -54,12 +58,42 @@ export const createOrder: RequestHandler = async (req, res) => {
     const makerDeposit = +(price * (1 + N_PERCENT / 100)).toFixed(9);
     const takerStake = +(price * 0.2).toFixed(9);
 
+    const takerForRecord = takerAddress ? takerAddress : null;
+
     if (offerId) {
       const existing = await prisma.order.findFirst({
         where: { offerId, status: "created" },
         orderBy: { createdAt: "desc" },
       });
-      if (existing) return res.status(200).json(existing);
+      if (existing) {
+        if (
+          takerForRecord &&
+          existing.takerAddress &&
+          existing.takerAddress !== takerForRecord
+        ) {
+          return res.status(409).json({ error: "order_taken" });
+        }
+
+        let order = existing;
+        if (takerForRecord && !existing.takerAddress) {
+          order = await prisma.order.update({
+            where: { id: existing.id },
+            data: { takerAddress: takerForRecord },
+          });
+        }
+
+        const conversation = await ensureOrderConversation(
+          order.id,
+          order.makerAddress,
+          takerForRecord ?? order.takerAddress ?? undefined,
+        );
+
+        return res.status(200).json({
+          ...order,
+          conversationId: conversation.id,
+          conversation,
+        });
+      }
     }
 
     const created = await prisma.order.create({
@@ -73,10 +107,21 @@ export const createOrder: RequestHandler = async (req, res) => {
         makerDeposit,
         takerStake,
         offerId,
+        takerAddress: takerForRecord,
       },
     });
 
-    res.status(201).json(created);
+    const conversation = await ensureOrderConversation(
+      created.id,
+      created.makerAddress,
+      takerForRecord ?? created.takerAddress ?? undefined,
+    );
+
+    res.status(201).json({
+      ...created,
+      conversationId: conversation.id,
+      conversation,
+    });
   } catch (e) {
     console.error("createOrder error:", e);
     res.status(500).json({ error: "internal_error" });

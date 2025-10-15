@@ -5,30 +5,30 @@ import { unwrapContent } from "./encryption";
 export type SSEClient = {
   address: string;
   res: Response;
-  heartbeat: NodeJS.Timer;
+  heartbeat: NodeJS.Timeout;
 };
 
 const clients = new Map<string, Set<SSEClient>>();
 
 function send(res: Response, event: string, data: unknown) {
   const payload = `event: ${event}\n` + `data: ${JSON.stringify(data)}\n\n`;
-  res.write(payload);
+  (res as any).write(payload);
 }
 
 export function subscribe(address: string, res: Response) {
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.flushHeaders?.();
+  (res as any).setHeader("Content-Type", "text/event-stream");
+  (res as any).setHeader("Cache-Control", "no-cache");
+  (res as any).setHeader("Connection", "keep-alive");
+  (res as any).flushHeaders?.();
 
   const entry: SSEClient = {
     address,
     res,
     heartbeat: setInterval(() => {
       try {
-        res.write(":keep-alive\n\n");
-      } catch {}
-    }, 25000) as any,
+        (res as any).write(":keep-alive\n\n");
+      } catch { }
+    }, 25000),
   };
 
   const bucket = clients.get(address) ?? new Set<SSEClient>();
@@ -38,19 +38,19 @@ export function subscribe(address: string, res: Response) {
   send(res, "ready", { ok: true });
 
   const cleanup = () => {
-    clearInterval(entry.heartbeat as any);
+    clearInterval(entry.heartbeat);
     const b = clients.get(address);
     if (b) {
       b.delete(entry);
       if (b.size === 0) clients.delete(address);
     }
     try {
-      res.end();
-    } catch {}
+      (res as any).end();
+    } catch { }
   };
 
-  res.on("close", cleanup);
-  res.on("error", cleanup);
+  (res as any).on("close", cleanup);
+  (res as any).on("error", cleanup);
 }
 
 export async function notifyNewItem(item: any) {
@@ -87,10 +87,10 @@ export async function notifyNewItem(item: any) {
       for (const client of bucket) {
         try {
           send(client.res, "chat.message", data);
-        } catch {}
+        } catch { }
       }
     }
-  } catch {}
+  } catch { }
 }
 
 export async function notifyTyping(params: {
@@ -116,7 +116,7 @@ export async function notifyTyping(params: {
           from,
           typing,
         });
-      } catch {}
+      } catch { }
     }
   }
 }
@@ -144,7 +144,7 @@ export async function notifyRead(params: {
           by,
           at: params.at || new Date().toISOString(),
         });
-      } catch {}
+      } catch { }
     }
   }
 }

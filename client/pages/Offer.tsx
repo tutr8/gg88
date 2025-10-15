@@ -93,8 +93,12 @@ export default function OfferPage() {
                 onClick={async () => {
                   try {
                     const maker = String(offer?.makerAddress || "");
+                    if (!me) {
+                      alert("Connect wallet to message maker");
+                      return;
+                    }
                     // If trying to message yourself -> open Favorites (self chat)
-                    if (me && maker && me === maker) {
+                    if (maker && me === maker) {
                       const rSelf = await fetch(apiUrl("/api/chat/self"), {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -120,11 +124,37 @@ export default function OfferPage() {
                         makerAddress: maker,
                         priceTON: Number(offer?.budgetTON || 0),
                         offerId: String(offer?.id || id || ""),
+                        takerAddress: me,
                       }),
                     });
                     const j = await r.json();
                     if (!r.ok) throw new Error(j?.error || "failed");
-                    navigate(`/chat/${j.id || j.order?.id}`);
+
+                    const conversationId =
+                      (typeof j.conversationId === "string" &&
+                        j.conversationId) ||
+                      (typeof j.conversation?.id === "string" &&
+                        j.conversation.id) ||
+                      (typeof j.order?.conversationId === "string" &&
+                        j.order.conversationId) ||
+                      (typeof j.order?.conversation?.id === "string" &&
+                        j.order.conversation.id) ||
+                      null;
+
+                    if (conversationId) {
+                      navigate(`/chat/${conversationId}`);
+                      return;
+                    }
+
+                    const fallbackId =
+                      (typeof j.id === "string" && j.id) ||
+                      (typeof j.order?.id === "string" && j.order.id);
+
+                    if (!fallbackId) {
+                      throw new Error("conversation_missing");
+                    }
+
+                    navigate(`/chat/${fallbackId}`);
                   } catch (e) {
                     alert("Unable to start chat");
                   }

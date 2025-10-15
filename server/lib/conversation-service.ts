@@ -1,10 +1,3 @@
-import {
-  Conversation,
-  ConversationKind,
-  ConversationParticipant,
-  InboxImportance,
-  ParticipantRole,
-} from "@prisma/client";
 import { prisma } from "./prisma";
 import { ensureUserByAddress } from "./user-service";
 import { APP_TENANT_ID } from "../config";
@@ -17,19 +10,19 @@ export async function ensureFavoritesConversation(address: string) {
   const normalized = normalizeAddress(address);
   const user = await ensureUserByAddress(normalized);
   let conversation = await prisma.conversation.findFirst({
-    where: { kind: ConversationKind.favorites, ownerId: user.id },
+    where: { kind: "favorites", ownerId: user.id },
   });
 
   if (!conversation) {
     conversation = await prisma.conversation.create({
       data: {
-        kind: ConversationKind.favorites,
+        kind: "favorites",
         ownerId: user.id,
         tenantId: APP_TENANT_ID,
         participants: {
           create: {
             address: normalized,
-            role: ParticipantRole.owner,
+            role: "owner",
             userId: user.id,
           },
         },
@@ -44,13 +37,13 @@ export async function ensureFavoritesConversation(address: string) {
         },
       },
       update: {
-        role: ParticipantRole.owner,
+        role: "owner",
         userId: user.id,
       },
       create: {
         conversationId: conversation.id,
         address: normalized,
-        role: ParticipantRole.owner,
+        role: "owner",
         userId: user.id,
       },
     });
@@ -79,20 +72,20 @@ export async function ensureOrderConversation(
     const participantsData: any[] = [
       {
         address: normalizedMaker,
-        role: ParticipantRole.maker,
+        role: "maker",
         userId: makerUser.id,
       },
     ];
     if (normalizedTaker && takerUser) {
       participantsData.push({
         address: normalizedTaker,
-        role: ParticipantRole.taker,
+        role: "taker",
         userId: takerUser.id,
       });
     }
     conversation = await prisma.conversation.create({
       data: {
-        kind: ConversationKind.order,
+        kind: "order",
         orderId,
         tenantId: APP_TENANT_ID,
         participants: {
@@ -108,11 +101,11 @@ export async function ensureOrderConversation(
           address: normalizedMaker,
         },
       },
-      update: { role: ParticipantRole.maker, userId: makerUser.id },
+      update: { role: "maker", userId: makerUser.id },
       create: {
         conversationId: conversation.id,
         address: normalizedMaker,
-        role: ParticipantRole.maker,
+        role: "maker",
         userId: makerUser.id,
       },
     });
@@ -124,11 +117,11 @@ export async function ensureOrderConversation(
             address: normalizedTaker,
           },
         },
-        update: { role: ParticipantRole.taker, userId: takerUser.id },
+        update: { role: "taker", userId: takerUser.id },
         create: {
           conversationId: conversation.id,
           address: normalizedTaker,
-          role: ParticipantRole.taker,
+          role: "taker",
           userId: takerUser.id,
         },
       });
@@ -171,7 +164,7 @@ export async function ensureParticipantAccess(
 
 export async function markConversationAsImportant(
   conversationId: string,
-  importance: InboxImportance,
+  importance: any, // Замените на конкретный тип если нужно
 ) {
   await prisma.conversation.update({
     where: { id: conversationId },
