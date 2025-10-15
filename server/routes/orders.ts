@@ -49,7 +49,7 @@ export const createOrder: RequestHandler = async (req, res) => {
       makerAddress = offer?.creator?.address || "";
     }
 
-    let takerAddress = String(takerRaw || "").trim();
+    const takerAddress = String(takerRaw || "").trim();
 
     if (!title || !Number.isFinite(price) || price <= 0 || !makerAddress) {
       return res.status(400).json({ error: "invalid_payload" });
