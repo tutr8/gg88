@@ -49,8 +49,8 @@ export function subscribe(address: string, res: Response) {
     } catch { }
   };
 
-  res.on("close", cleanup);
-  res.on("error", cleanup);
+  (res as any).on("close", cleanup);
+  (res as any).on("error", cleanup);
 }
 
 export async function notifyNewItem(item: any) {
