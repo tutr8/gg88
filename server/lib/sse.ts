@@ -28,7 +28,7 @@ export function subscribe(address: string, res: Response) {
       try {
         res.write(":keep-alive\n\n");
       } catch {}
-    }, 25000),
+    }, 25000) as any,
   };
 
   const bucket = clients.get(address) ?? new Set<SSEClient>();
