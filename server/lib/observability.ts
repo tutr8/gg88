@@ -1,29 +1,33 @@
 import { performance } from "node:perf_hooks";
 import type { IncomingMessage, ServerResponse } from "http";
-import * as Sentry from "@sentry/node";
+
+// Динамический импорт Sentry для избежания проблем с типами
+let Sentry: any = null;
 
 const SENTRY_DSN = process.env.SENTRY_DSN;
 
-// Проверяем инициализацию Sentry более безопасным способом
+// Безопасная проверка инициализации Sentry
 const isSentryEnabled = () => {
-  try {
-    return Boolean(SENTRY_DSN && Sentry.getCurrentHub?.().getClient?.());
-  } catch {
-    return false;
-  }
+  return Boolean(SENTRY_DSN && Sentry);
 };
 
-// Инициализируем Sentry если DSN есть и Sentry еще не инициализирован
+// Инициализируем Sentry асинхронно если нужно
 if (SENTRY_DSN) {
   try {
-    if (!isSentryEnabled()) {
-      Sentry.init({
-        dsn: SENTRY_DSN,
-        tracesSampleRate: 0.2,
-      } as any); // Используем any для обхода проблем с типами
-    }
+    // Динамический импорт чтобы избежать проблем с типами во время компиляции
+    import("@sentry/node").then((sentryModule) => {
+      Sentry = sentryModule;
+      if (Sentry && !Sentry.getCurrentHub().getClient()) {
+        Sentry.init({
+          dsn: SENTRY_DSN,
+          tracesSampleRate: 0.2,
+        });
+      }
+    }).catch((error) => {
+      console.error("Failed to load Sentry:", error);
+    });
   } catch (error) {
-    console.error("Failed to initialize Sentry:", error);
+    console.error("Sentry initialization failed:", error);
   }
 }
 
@@ -45,12 +49,12 @@ export function captureError(
   error: unknown,
   context?: Record<string, unknown>,
 ) {
-  if (isSentryEnabled()) {
+  if (isSentryEnabled() && Sentry) {
     try {
-      Sentry.withScope((scope) => {
+      Sentry.withScope((scope: any) => {
         if (context) {
           Object.entries(context).forEach(([key, value]) =>
-            scope.setContext(key, { value }),
+            scope.setContext(key, { value })
           );
         }
         Sentry.captureException(error);
@@ -58,6 +62,9 @@ export function captureError(
     } catch (sentryError) {
       console.error("Sentry error capture failed:", sentryError);
     }
+  } else {
+    // Fallback logging when Sentry is not available
+    console.error("Error captured:", error, context);
   }
 }
 
@@ -75,6 +82,11 @@ export function recordMessageMetric(metric: MessageMetric) {
   if (metric.status !== "delivered") {
     metricState.errors += 1;
   }
+  
+  // Keep only last 1000 samples to prevent memory leaks
+  if (metricState.latencySamples.length > 1000) {
+    metricState.latencySamples = metricState.latencySamples.slice(-500);
+  }
 }
 
 export function getMetricsSnapshot() {
@@ -90,6 +102,7 @@ export function getMetricsSnapshot() {
     statusCounters: Object.fromEntries(metricState.statusCounters.entries()),
     avgLatency,
     p95Latency,
+    sampleSize: metricState.latencySamples.length,
   };
 }
 
@@ -120,7 +133,7 @@ export async function traceMessage<T>(
       status: "failed",
       latencyMs: performance.now() - start,
     });
-    captureError(error, { action });
+    captureError(error, { action, channel });
     throw error;
   }
 }
@@ -129,7 +142,8 @@ export function registerRequestBreadcrumb(
   req: IncomingMessage,
   res: ServerResponse,
 ) {
-  if (!isSentryEnabled()) return;
+  if (!isSentryEnabled() || !Sentry) return;
+  
   const start = performance.now();
   res.once("finish", () => {
     const duration = performance.now() - start;
@@ -148,4 +162,13 @@ export function registerRequestBreadcrumb(
       console.error("Failed to add Sentry breadcrumb:", error);
     }
   });
+}
+
+// Утилита для ручного логирования
+export function logInfo(message: string, context?: Record<string, unknown>) {
+  console.log(`[INFO] ${message}`, context || '');
+}
+
+export function logWarn(message: string, context?: Record<string, unknown>) {
+  console.warn(`[WARN] ${message}`, context || '');
 }
