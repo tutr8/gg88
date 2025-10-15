@@ -113,6 +113,34 @@ export function createServer() {
     }
   });
 
+  // Also expose manifest under /api for Vercel rewrites
+  app.get("/api/ton/manifest", async (req, res) => {
+    try {
+      const base = `${req.protocol}://${req.get("host")}`;
+      const tonServer = (TON_API_BASE || "").replace(/\/$/, "");
+      const manifest = {
+        manifestVersion: "1.1",
+        url: base,
+        name: "FreelTON",
+        iconUrl: `${base}/placeholder.svg`,
+        termsOfUseUrl: `${base}/terms`,
+        privacyPolicyUrl: `${base}/privacy`,
+        ton: {
+          default: {
+            name: "TON",
+            description: "TON blockchain",
+            servers: [{ name: "tonapi", url: tonServer }],
+          },
+        },
+      };
+      res.setHeader("Content-Type", "application/json; charset=utf-8");
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.json(manifest);
+    } catch (e) {
+      res.status(500).json({ error: "manifest build error" });
+    }
+  });
+
   // Serve placeholder icon with CORS
   app.get("/placeholder.svg", async (_req, res) => {
     try {
@@ -121,6 +149,19 @@ export function createServer() {
       res.sendFile(path.resolve(process.cwd(), "public/placeholder.svg"));
     } catch (e) {
       res.status(404).end();
+    }
+  });
+
+  // Icon PNG for wallets (used by manifest when needed)
+  app.get("/api/icon.png", async (_req, res) => {
+    try {
+      const r = await fetch("https://via.placeholder.com/180.png");
+      const buf = Buffer.from(await r.arrayBuffer());
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      res.status(200).send(buf);
+    } catch (e) {
+      res.status(500).end();
     }
   });
 
