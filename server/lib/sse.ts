@@ -44,7 +44,9 @@ export function subscribe(address: string, res: Response) {
       b.delete(entry);
       if (b.size === 0) clients.delete(address);
     }
-    try { res.end(); } catch {}
+    try {
+      res.end();
+    } catch {}
   };
 
   res.on("close", cleanup);
@@ -91,7 +93,11 @@ export async function notifyNewItem(item: any) {
   } catch {}
 }
 
-export async function notifyTyping(params: { conversationId: string; from: string; typing: boolean; }) {
+export async function notifyTyping(params: {
+  conversationId: string;
+  from: string;
+  typing: boolean;
+}) {
   const { conversationId, from, typing } = params;
   const participants = await prisma.conversationParticipant.findMany({
     where: { conversationId },
@@ -104,13 +110,22 @@ export async function notifyTyping(params: { conversationId: string; from: strin
     if (!bucket) continue;
     for (const client of bucket) {
       try {
-        send(client.res, "chat.typing", { type: "chat.typing", conversationId, from, typing });
+        send(client.res, "chat.typing", {
+          type: "chat.typing",
+          conversationId,
+          from,
+          typing,
+        });
       } catch {}
     }
   }
 }
 
-export async function notifyRead(params: { conversationId: string; by: string; at?: string; }) {
+export async function notifyRead(params: {
+  conversationId: string;
+  by: string;
+  at?: string;
+}) {
   const { conversationId, by } = params;
   const participants = await prisma.conversationParticipant.findMany({
     where: { conversationId },
@@ -123,7 +138,12 @@ export async function notifyRead(params: { conversationId: string; by: string; a
     if (!bucket) continue;
     for (const client of bucket) {
       try {
-        send(client.res, "chat.read", { type: "chat.read", conversationId, by, at: params.at || new Date().toISOString() });
+        send(client.res, "chat.read", {
+          type: "chat.read",
+          conversationId,
+          by,
+          at: params.at || new Date().toISOString(),
+        });
       } catch {}
     }
   }

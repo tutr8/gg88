@@ -116,7 +116,10 @@ export default function ChatRoom() {
             createdAt: String(m.createdAt || new Date().toISOString()),
           },
         ]);
-        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 30);
+        setTimeout(
+          () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
+          30,
+        );
       } catch {}
     };
 
@@ -141,7 +144,9 @@ export default function ChatRoom() {
     src.addEventListener("chat.typing", onTyping as any);
 
     return () => {
-      try { src.close(); } catch {}
+      try {
+        src.close();
+      } catch {}
       for (const k of Object.keys(typingTimers.current)) {
         window.clearTimeout(typingTimers.current[k]);
       }
@@ -177,7 +182,10 @@ export default function ChatRoom() {
         createdAt: new Date().toISOString(),
       },
     ]);
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 10);
+    setTimeout(
+      () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
+      10,
+    );
 
     const res = await fetch(apiUrl(`/api/inbox`), {
       method: "POST",
@@ -230,7 +238,9 @@ export default function ChatRoom() {
             <div className="flex-1 min-h-0 space-y-1 overflow-y-auto rounded-lg border border-white/10 bg-white/5 p-3">
               {loading && <div className="text-white/70">Loading…</div>}
               {!loading && !error && someoneTyping && (
-                <div className="text-white/50 text-xs">Companion is typing…</div>
+                <div className="text-white/50 text-xs">
+                  Companion is typing…
+                </div>
               )}
               {error && !loading && (
                 <div className="text-white/70">{error}</div>
@@ -275,7 +285,11 @@ export default function ChatRoom() {
                         await fetch(apiUrl(`/api/chat/typing`), {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ address: me, conversationId: id, typing: v.length > 0 }),
+                          body: JSON.stringify({
+                            address: me,
+                            conversationId: id,
+                            typing: v.length > 0,
+                          }),
                         });
                       }
                     } catch {}

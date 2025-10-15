@@ -68,7 +68,9 @@ export const postInboxItem: RequestHandler = async (req, res) => {
 
 export const listInboxByThread: RequestHandler = async (req, res) => {
   try {
-    const threadId = req.query.threadId ? String(req.query.threadId) : undefined;
+    const threadId = req.query.threadId
+      ? String(req.query.threadId)
+      : undefined;
     const conversationId = req.query.conversationId
       ? String(req.query.conversationId)
       : undefined;
