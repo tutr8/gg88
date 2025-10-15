@@ -45,7 +45,7 @@ export function subscribe(address: string, res: Response) {
       if (b.size === 0) clients.delete(address);
     }
     try {
-      res.end();
+      (res as any).end();
     } catch { }
   };
 
