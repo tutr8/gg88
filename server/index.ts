@@ -67,6 +67,9 @@ export function createServer() {
   app.get("/api/inbox", listInboxByThread);
   app.post("/api/inbox", postInboxItem);
 
+  // Realtime stream (SSE)
+  app.get("/api/stream", (await import("./routes/stream")).stream);
+
   // Conversation API
   app.get("/api/conversations", listConversations);
   app.get("/api/conversations/:id", getConversation);
