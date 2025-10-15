@@ -131,8 +131,10 @@ export default function OfferPage() {
                     if (!r.ok) throw new Error(j?.error || "failed");
 
                     const conversationId =
-                      (typeof j.conversationId === "string" && j.conversationId) ||
-                      (typeof j.conversation?.id === "string" && j.conversation.id) ||
+                      (typeof j.conversationId === "string" &&
+                        j.conversationId) ||
+                      (typeof j.conversation?.id === "string" &&
+                        j.conversation.id) ||
                       (typeof j.order?.conversationId === "string" &&
                         j.order.conversationId) ||
                       (typeof j.order?.conversation?.id === "string" &&
