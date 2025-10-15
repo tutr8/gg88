@@ -152,6 +152,7 @@ export default function Chat() {
     };
 
     src.addEventListener("chat.message", onEvent as any);
+    src.addEventListener("chat.read", onEvent as any);
 
     return () => {
       try { src.close(); } catch {}
