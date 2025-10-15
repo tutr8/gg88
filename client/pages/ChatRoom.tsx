@@ -85,21 +85,42 @@ export default function ChatRoom() {
 
   useEffect(() => {
     if (!id || !me) return;
-    let mounted = true;
-    let timer: number | undefined;
 
-    const tick = async () => {
-      if (!mounted) return;
-      await load(me);
-      if (!mounted) return;
-      timer = window.setTimeout(tick, 4000);
+    load(me);
+
+    const src = new EventSource(
+      apiUrl(`/api/stream?address=${encodeURIComponent(me)}`),
+    );
+
+    const onEvent = (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data || "{}");
+        const type = (data?.type as string) || e.type;
+        if (type !== "chat.message") return;
+        if (String(data.conversationId || "") !== String(id)) return;
+        const m = data.message || {};
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: String(m.id || Math.random()),
+            sender: String(m.address || ""),
+            text: String(m.text || ""),
+            createdAt: String(m.createdAt || new Date().toISOString()),
+          },
+        ]);
+        setTimeout(
+          () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
+          30,
+        );
+      } catch {}
     };
 
-    tick();
+    src.addEventListener("chat.message", onEvent as any);
 
     return () => {
-      mounted = false;
-      if (timer) window.clearTimeout(timer);
+      try {
+        src.close();
+      } catch {}
     };
   }, [id, me]);
 
@@ -121,15 +142,23 @@ export default function ChatRoom() {
 
     setText("");
 
+    // Optimistic append
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: String(Math.random()),
+        sender: me,
+        text,
+        createdAt: new Date().toISOString(),
+      },
+    ]);
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 10);
+
     await fetch(apiUrl(`/api/inbox`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-
-    if (me) {
-      await load(me);
-    }
   }
 
   return (
