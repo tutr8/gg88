@@ -38,7 +38,7 @@ export function subscribe(address: string, res: Response) {
   send(res, "ready", { ok: true });
 
   const cleanup = () => {
-    clearInterval(entry.heartbeat);
+    clearInterval(entry.heartbeat as any);
     const b = clients.get(address);
     if (b) {
       b.delete(entry);
