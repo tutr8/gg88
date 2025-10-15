@@ -90,3 +90,41 @@ export async function notifyNewItem(item: any) {
     }
   } catch {}
 }
+
+export async function notifyTyping(params: { conversationId: string; from: string; typing: boolean; }) {
+  const { conversationId, from, typing } = params;
+  const participants = await prisma.conversationParticipant.findMany({
+    where: { conversationId },
+    select: { address: true },
+  });
+  for (const p of participants) {
+    const addr = p.address;
+    if (!addr || addr === from) continue;
+    const bucket = clients.get(addr);
+    if (!bucket) continue;
+    for (const client of bucket) {
+      try {
+        send(client.res, "chat.typing", { type: "chat.typing", conversationId, from, typing });
+      } catch {}
+    }
+  }
+}
+
+export async function notifyRead(params: { conversationId: string; by: string; at?: string; }) {
+  const { conversationId, by } = params;
+  const participants = await prisma.conversationParticipant.findMany({
+    where: { conversationId },
+    select: { address: true },
+  });
+  for (const p of participants) {
+    const addr = p.address;
+    if (!addr || addr === by) continue;
+    const bucket = clients.get(addr);
+    if (!bucket) continue;
+    for (const client of bucket) {
+      try {
+        send(client.res, "chat.read", { type: "chat.read", conversationId, by, at: params.at || new Date().toISOString() });
+      } catch {}
+    }
+  }
+}

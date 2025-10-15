@@ -63,9 +63,13 @@ export function createServer() {
   app.get("/api/messages", listMessages);
   app.post("/api/messages", createMessage);
 
+  // Chat typing indicator
+  app.post("/api/chat/typing", (await import("./routes/chat-typing")).postTyping);
+
   // Inbox API
   app.get("/api/inbox", listInboxByThread);
   app.post("/api/inbox", postInboxItem);
+  app.post("/api/inbox/read", (await import("./routes/inbox-read")).postInboxRead);
 
   // Realtime stream (SSE)
   app.get("/api/stream", (await import("./routes/stream")).stream);
