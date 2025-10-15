@@ -1,12 +1,4 @@
 import crypto from "node:crypto";
-import {
-  InboxChannel,
-  InboxImportance,
-  InboxStatus,
-  InboxType,
-  PiiClass,
-  Prisma,
-} from "@prisma/client";
 import { prisma } from "./prisma";
 import { APP_TENANT_ID } from "../config";
 import {
@@ -27,6 +19,13 @@ import {
 const EMAIL_REGEX = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 const PHONE_REGEX = /\+?\d[\d\s\-()]{8,}/;
 const WALLET_REGEX = /(0:)?[a-f0-9]{64}/i;
+
+// Заменили enum'ы на строковые константы
+type InboxChannel = "chat" | "toast" | "email" | "push" | "log";
+type InboxImportance = "low" | "medium" | "high" | "critical";
+type InboxStatus = "pending" | "delivered" | "failed" | "cancelled";
+type InboxType = "notification" | "message" | "alert" | "transaction";
+type PiiClass = "none" | "personal" | "sensitive";
 
 const PII_PRIORITY: Record<PiiClass, number> = {
   none: 0,
@@ -81,7 +80,7 @@ function classifyPayload(payload: InboxPayloadInput) {
   const strings: string[] = [];
   collectStrings((payload.content as any)?.args ?? {}, strings);
   const tags = new Set<string>();
-  let level = payload.piiClass as PiiClass;
+  let level: PiiClass = (payload.piiClass as PiiClass) || "none";
 
   for (const raw of strings) {
     const value = raw.trim();
@@ -193,7 +192,7 @@ function shouldAutoDeliver(channel: InboxChannel) {
 }
 
 type AdapterContext = {
-  item: Prisma.InboxItem;
+  item: any;
   payload: InboxPayloadInput & { tenantId: string };
 };
 
@@ -314,7 +313,7 @@ export async function ingestInboxPayload(
       ? summarizeContent(payload.content)
       : payload.content;
 
-  const baseData: Prisma.InboxItemCreateInput = {
+  const baseData: any = {
     tenantId: payload.tenantId,
     conversation: payload.conversationId
       ? { connect: { id: payload.conversationId } }
@@ -339,7 +338,7 @@ export async function ingestInboxPayload(
     meta: sanitizeMeta(payload.meta ?? undefined) ?? undefined,
     classification: classification.tags,
     piiClass: classification.level,
-    status: payload.status ?? InboxStatus.pending,
+    status: payload.status || "pending",
     dedupeKey,
     retryCount: 0,
     nextAttemptAt: payload.nextAttemptAt ?? null,
@@ -373,7 +372,7 @@ export async function ingestInboxPayload(
 
   if (
     shouldAutoDeliver(item.channel as InboxChannel) &&
-    item.status !== InboxStatus.delivered
+    item.status !== "delivered"
   ) {
     await prisma.inboxItem.update({
       where: { id: item.id },
