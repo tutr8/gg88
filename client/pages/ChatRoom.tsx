@@ -107,15 +107,19 @@ export default function ChatRoom() {
         const data = JSON.parse(e.data || "{}");
         if (String(data.conversationId || "") !== String(id)) return;
         const m = data.message || {};
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: String(m.id || Math.random()),
-            sender: String(m.address || ""),
-            text: String(m.text || ""),
-            createdAt: String(m.createdAt || new Date().toISOString()),
-          },
-        ]);
+        const newMsg: Message = {
+          id: String(m.id || Math.random()),
+          sender: String(m.address || ""),
+          text: String(m.text || ""),
+          createdAt: String(m.createdAt || new Date().toISOString()),
+        };
+        setMessages((prev) => {
+          const exists = prev.some((x) => x.id === newMsg.id);
+          if (exists) {
+            return prev.map((x) => (x.id === newMsg.id ? newMsg : x));
+          }
+          return [...prev, newMsg];
+        });
         setTimeout(
           () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
           30,
@@ -195,16 +199,26 @@ export default function ChatRoom() {
     try {
       const data = await res.json();
       if (data?.item?.id) {
+        const serverId = String(data.item.id);
         setMessages((prev) => {
           const copy = [...prev];
           // Replace last optimistic if same sender and text
           for (let i = copy.length - 1; i >= 0; i--) {
             if (copy[i].sender === me && copy[i].text === text) {
-              copy[i] = { ...copy[i], id: String(data.item.id) } as any;
+              copy[i] = { ...copy[i], id: serverId } as Message;
               break;
             }
           }
-          return copy;
+          // Deduplicate by id, preferring the last occurrence
+          const seen = new Set<string>();
+          const deduped: Message[] = [];
+          for (let i = copy.length - 1; i >= 0; i--) {
+            const msg = copy[i];
+            if (seen.has(msg.id)) continue;
+            seen.add(msg.id);
+            deduped.unshift(msg);
+          }
+          return deduped;
         });
       }
     } catch {}
