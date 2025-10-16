@@ -74,7 +74,16 @@ export default function ChatRoom() {
         text: String(m.text || ""),
         createdAt: String(m.createdAt || new Date().toISOString()),
       }));
-      setMessages(mapped);
+      // Deduplicate by id while preserving the last occurrence
+      const seen = new Set<string>();
+      const deduped: Message[] = [];
+      for (let i = mapped.length - 1; i >= 0; i--) {
+        const msg = mapped[i];
+        if (seen.has(msg.id)) continue;
+        seen.add(msg.id);
+        deduped.unshift(msg);
+      }
+      setMessages(deduped);
       setError(null);
       setTimeout(
         () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
