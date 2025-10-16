@@ -13,6 +13,7 @@ export default function OfferPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(!seed);
   const [error, setError] = useState<string | null>(null);
+  const [deadline, setDeadline] = useState<string>("");
 
   useEffect(() => {
     if (seed || !id) return;
@@ -87,7 +88,21 @@ export default function OfferPage() {
                 {String(offer.description)}
               </div>
             )}
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="mb-2 block text-sm text-white/70">
+                  Deadline (дедлайн)
+                </label>
+                <input
+                  type="datetime-local"
+                  value={deadline}
+                  onChange={(e) => setDeadline(e.target.value)}
+                  className="h-10 w-full rounded-md bg-white/5 text-white border border-white/10 px-3 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                />
+                <div className="mt-1 text-xs text-white/50">
+                  До какой даты и времени нужно выполнить заказ.
+                </div>
+              </div>
               <Button
                 className="bg-primary text-primary-foreground"
                 onClick={async () => {
@@ -125,6 +140,7 @@ export default function OfferPage() {
                         priceTON: Number(offer?.budgetTON || 0),
                         offerId: String(offer?.id || id || ""),
                         takerAddress: me,
+                        deadline: deadline ? new Date(deadline).toISOString() : undefined,
                       }),
                     });
                     const j = await r.json();
