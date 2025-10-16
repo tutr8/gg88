@@ -140,7 +140,9 @@ export default function OfferPage() {
                         priceTON: Number(offer?.budgetTON || 0),
                         offerId: String(offer?.id || id || ""),
                         takerAddress: me,
-                        deadline: deadline ? new Date(deadline).toISOString() : undefined,
+                        deadline: deadline
+                          ? new Date(deadline).toISOString()
+                          : undefined,
                       }),
                     });
                     const j = await r.json();

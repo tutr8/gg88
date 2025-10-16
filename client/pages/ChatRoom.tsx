@@ -205,7 +205,6 @@ export default function ChatRoom() {
 
     setText("");
 
-
     const res = await fetch(apiUrl(`/api/inbox`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },

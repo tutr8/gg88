@@ -210,7 +210,8 @@ export default function Chat() {
       (entry) => entry.order?.status === "completed",
     );
     const otherRaw = orderThreads.filter(
-      (entry) => !inProgressRaw.includes(entry) && !completedRaw.includes(entry),
+      (entry) =>
+        !inProgressRaw.includes(entry) && !completedRaw.includes(entry),
     );
 
     const dedupe = (arr: typeof orderThreads) => {

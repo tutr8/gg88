@@ -99,11 +99,17 @@ export const createOrder: RequestHandler = async (req, res) => {
               updatedConversation = await prisma.conversation.update({
                 where: { id: conversation.id },
                 data: {
-                  metadata: { ...(conversation as any).metadata, deadlineISO: d.toISOString() },
+                  metadata: {
+                    ...(conversation as any).metadata,
+                    deadlineISO: d.toISOString(),
+                  },
                 },
               });
             } catch (e) {
-              console.warn("failed to set deadline on existing conversation", e);
+              console.warn(
+                "failed to set deadline on existing conversation",
+                e,
+              );
             }
           }
         }
@@ -146,7 +152,10 @@ export const createOrder: RequestHandler = async (req, res) => {
           updatedConversation = await prisma.conversation.update({
             where: { id: conversation.id },
             data: {
-              metadata: { ...(conversation as any).metadata, deadlineISO: d.toISOString() },
+              metadata: {
+                ...(conversation as any).metadata,
+                deadlineISO: d.toISOString(),
+              },
             },
           });
         } catch (e) {
