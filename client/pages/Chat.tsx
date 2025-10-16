@@ -202,16 +202,33 @@ export default function Chat() {
   }, [conversations, orderMap]);
 
   const sections = useMemo(() => {
-    const inProgress = orderThreads.filter((entry) => {
+    const inProgressRaw = orderThreads.filter((entry) => {
       const status = entry.order?.status;
       return status === "created" || status === "in_progress";
     });
-    const completed = orderThreads.filter(
+    const completedRaw = orderThreads.filter(
       (entry) => entry.order?.status === "completed",
     );
-    const other = orderThreads.filter(
-      (entry) => !inProgress.includes(entry) && !completed.includes(entry),
+    const otherRaw = orderThreads.filter(
+      (entry) => !inProgressRaw.includes(entry) && !completedRaw.includes(entry),
     );
+
+    const dedupe = (arr: typeof orderThreads) => {
+      const seen = new Set<string>();
+      const out: typeof orderThreads = [];
+      for (let i = 0; i < arr.length; i++) {
+        const id = String(arr[i].conversation.id);
+        if (seen.has(id)) continue;
+        seen.add(id);
+        out.push(arr[i]);
+      }
+      return out;
+    };
+
+    const inProgress = dedupe(inProgressRaw);
+    const completed = dedupe(completedRaw);
+    const other = dedupe(otherRaw);
+
     return { inProgress, completed, other };
   }, [orderThreads]);
 
