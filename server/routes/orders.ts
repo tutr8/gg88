@@ -37,6 +37,7 @@ export const createOrder: RequestHandler = async (req, res) => {
       priceTON,
       offerId = null,
       takerAddress: takerRaw = "",
+      deadline: deadlineRaw = null,
     } = req.body ?? {};
     const price = Number(priceTON);
 
@@ -88,10 +89,29 @@ export const createOrder: RequestHandler = async (req, res) => {
           takerForRecord ?? order.takerAddress ?? undefined,
         );
 
+        // For existing order, allow updating deadline as well
+        let updatedConversation = conversation;
+        const deadlineExisting = (req.body ?? {}).deadline;
+        if (deadlineExisting) {
+          const d = new Date(String(deadlineExisting));
+          if (!isNaN(d.getTime())) {
+            try {
+              updatedConversation = await prisma.conversation.update({
+                where: { id: conversation.id },
+                data: {
+                  metadata: { ...(conversation as any).metadata, deadlineISO: d.toISOString() },
+                },
+              });
+            } catch (e) {
+              console.warn("failed to set deadline on existing conversation", e);
+            }
+          }
+        }
+
         return res.status(200).json({
           ...order,
-          conversationId: conversation.id,
-          conversation,
+          conversationId: updatedConversation.id,
+          conversation: updatedConversation,
         });
       }
     }
@@ -117,10 +137,28 @@ export const createOrder: RequestHandler = async (req, res) => {
       takerForRecord ?? created.takerAddress ?? undefined,
     );
 
+    // Optional deadline saved into conversation metadata (no schema changes required)
+    let updatedConversation = conversation;
+    if (deadlineRaw) {
+      const d = new Date(String(deadlineRaw));
+      if (!isNaN(d.getTime())) {
+        try {
+          updatedConversation = await prisma.conversation.update({
+            where: { id: conversation.id },
+            data: {
+              metadata: { ...(conversation as any).metadata, deadlineISO: d.toISOString() },
+            },
+          });
+        } catch (e) {
+          console.warn("failed to set deadline on conversation", e);
+        }
+      }
+    }
+
     res.status(201).json({
       ...created,
-      conversationId: conversation.id,
-      conversation,
+      conversationId: updatedConversation.id,
+      conversation: updatedConversation,
     });
   } catch (e) {
     console.error("createOrder error:", e);
