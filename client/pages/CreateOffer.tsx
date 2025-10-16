@@ -8,7 +8,7 @@ import { useIsWalletConnected, useWalletAddress } from "@/hooks/useTon";
 
 export default function CreateOffer() {
   const [title, setTitle] = useState("");
-  const [budget, setBudget] = useState("0.1");
+  const [budget, setBudget] = useState("1");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [stack, setStack] = useState("");
@@ -100,7 +100,7 @@ export default function CreateOffer() {
               </label>
               <Input
                 type="number"
-                step="0.01"
+                step="0.1"
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
                 className="bg-white/5 text-white border-white/10"
