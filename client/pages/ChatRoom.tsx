@@ -185,20 +185,6 @@ export default function ChatRoom() {
 
     setText("");
 
-    // Optimistic append
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: String(Math.random()),
-        sender: me,
-        text,
-        createdAt: new Date().toISOString(),
-      },
-    ]);
-    setTimeout(
-      () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
-      10,
-    );
 
     const res = await fetch(apiUrl(`/api/inbox`), {
       method: "POST",
@@ -206,30 +192,7 @@ export default function ChatRoom() {
       body: JSON.stringify(payload),
     });
     try {
-      const data = await res.json();
-      if (data?.item?.id) {
-        const serverId = String(data.item.id);
-        setMessages((prev) => {
-          const copy = [...prev];
-          // Replace last optimistic if same sender and text
-          for (let i = copy.length - 1; i >= 0; i--) {
-            if (copy[i].sender === me && copy[i].text === text) {
-              copy[i] = { ...copy[i], id: serverId } as Message;
-              break;
-            }
-          }
-          // Deduplicate by id, preferring the last occurrence
-          const seen = new Set<string>();
-          const deduped: Message[] = [];
-          for (let i = copy.length - 1; i >= 0; i--) {
-            const msg = copy[i];
-            if (seen.has(msg.id)) continue;
-            seen.add(msg.id);
-            deduped.unshift(msg);
-          }
-          return deduped;
-        });
-      }
+      await res.json();
     } catch {}
 
     // Mark read (self)
