@@ -76,14 +76,20 @@ export default function ChatRoom() {
         text: String(m.text || ""),
         createdAt: String(m.createdAt || new Date().toISOString()),
       }));
-      // Deduplicate by id while preserving the last occurrence
-      const seen = new Set<string>();
+      // Deduplicate by id and by content signature within a short window
+      const byId = new Set<string>();
+      const bySig = new Set<string>();
+      const windowMs = 30_000; // 30s window for same-sender same-text
       const deduped: Message[] = [];
-      for (let i = mapped.length - 1; i >= 0; i--) {
+      for (let i = 0; i < mapped.length; i++) {
         const msg = mapped[i];
-        if (seen.has(msg.id)) continue;
-        seen.add(msg.id);
-        deduped.unshift(msg);
+        if (byId.has(msg.id)) continue;
+        const ts = Date.parse(msg.createdAt) || 0;
+        const sig = `${msg.sender}\u0001${msg.text}\u0001${Math.floor(ts / windowMs)}`;
+        if (bySig.has(sig)) continue;
+        byId.add(msg.id);
+        bySig.add(sig);
+        deduped.push(msg);
       }
       setMessages(deduped);
       setError(null);
@@ -125,10 +131,22 @@ export default function ChatRoom() {
           createdAt: String(m.createdAt || new Date().toISOString()),
         };
         setMessages((prev) => {
-          const exists = prev.some((x) => x.id === newMsg.id);
-          if (exists) {
+          // By id
+          const existsById = prev.some((x) => x.id === newMsg.id);
+          if (existsById) {
             return prev.map((x) => (x.id === newMsg.id ? newMsg : x));
           }
+          // By content signature within 15s window
+          const tsNew = Date.parse(newMsg.createdAt) || Date.now();
+          const existsBySig = prev.some((x) => {
+            const tsX = Date.parse(x.createdAt) || 0;
+            return (
+              x.sender === newMsg.sender &&
+              x.text === newMsg.text &&
+              Math.abs(tsX - tsNew) <= 15_000
+            );
+          });
+          if (existsBySig) return prev;
           return [...prev, newMsg];
         });
         setTimeout(
