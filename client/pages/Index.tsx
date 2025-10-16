@@ -93,8 +93,8 @@ export default function Index() {
           ? await r.json().catch(() => ({ items: [] }))
           : { items: [] };
         if (!mounted) return;
-        setOffers(
-          (json.items || []).map((d: any) => ({
+        {
+          const mapped = (json.items || []).map((d: any) => ({
             id: String(d.id ?? crypto.randomUUID()),
             title: String(d.title ?? ""),
             description: String(d.description ?? ""),
@@ -102,8 +102,17 @@ export default function Index() {
             status: String(d.status ?? "open"),
             createdAt: String(d.createdAt ?? new Date().toISOString()),
             imageUrl: d.imageUrl ?? null,
-          })),
-        );
+          }));
+          const seen = new Set<string>();
+          const deduped: Offer[] = [];
+          for (let i = mapped.length - 1; i >= 0; i--) {
+            const it = mapped[i];
+            if (seen.has(it.id)) continue;
+            seen.add(it.id);
+            deduped.unshift(it);
+          }
+          setOffers(deduped);
+        }
       } catch (e: any) {
         if (!mounted || e?.name === "AbortError") return;
         setOffers([]);

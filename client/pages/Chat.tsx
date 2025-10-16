@@ -73,7 +73,7 @@ export default function Chat() {
           createdAt: String(o.createdAt || new Date().toISOString()),
         }));
 
-        const nextConversations = (
+        const mappedConversations = (
           (conversationsJson.conversations ?? []) as any[]
         ).map((c) => ({
           id: String(c.id),
@@ -90,6 +90,15 @@ export default function Chat() {
             : null,
           unreadCount: Number(c.unreadCount ?? 0),
         }));
+        // Deduplicate by id (keep last occurrence)
+        const seen = new Set<string>();
+        const nextConversations: typeof mappedConversations = [];
+        for (let i = mappedConversations.length - 1; i >= 0; i--) {
+          const it = mappedConversations[i];
+          if (seen.has(it.id)) continue;
+          seen.add(it.id);
+          nextConversations.unshift(it);
+        }
 
         setOrders(nextOrders);
         setConversations(nextConversations);
@@ -121,7 +130,7 @@ export default function Chat() {
         const conversationsJson = conversationsRes.ok
           ? await conversationsRes.json()
           : { conversations: [] };
-        const nextConversations = (
+        const mappedConversations = (
           (conversationsJson.conversations ?? []) as any[]
         ).map((c) => ({
           id: String(c.id),
@@ -138,6 +147,15 @@ export default function Chat() {
             : null,
           unreadCount: Number(c.unreadCount ?? 0),
         }));
+        // Deduplicate by id (keep last occurrence)
+        const seen = new Set<string>();
+        const nextConversations: typeof mappedConversations = [];
+        for (let i = mappedConversations.length - 1; i >= 0; i--) {
+          const it = mappedConversations[i];
+          if (seen.has(it.id)) continue;
+          seen.add(it.id);
+          nextConversations.unshift(it);
+        }
         setConversations(nextConversations);
       } catch {}
     };
@@ -184,16 +202,34 @@ export default function Chat() {
   }, [conversations, orderMap]);
 
   const sections = useMemo(() => {
-    const inProgress = orderThreads.filter((entry) => {
+    const inProgressRaw = orderThreads.filter((entry) => {
       const status = entry.order?.status;
       return status === "created" || status === "in_progress";
     });
-    const completed = orderThreads.filter(
+    const completedRaw = orderThreads.filter(
       (entry) => entry.order?.status === "completed",
     );
-    const other = orderThreads.filter(
-      (entry) => !inProgress.includes(entry) && !completed.includes(entry),
+    const otherRaw = orderThreads.filter(
+      (entry) =>
+        !inProgressRaw.includes(entry) && !completedRaw.includes(entry),
     );
+
+    const dedupe = (arr: typeof orderThreads) => {
+      const seen = new Set<string>();
+      const out: typeof orderThreads = [];
+      for (let i = 0; i < arr.length; i++) {
+        const id = String(arr[i].conversation.id);
+        if (seen.has(id)) continue;
+        seen.add(id);
+        out.push(arr[i]);
+      }
+      return out;
+    };
+
+    const inProgress = dedupe(inProgressRaw);
+    const completed = dedupe(completedRaw);
+    const other = dedupe(otherRaw);
+
     return { inProgress, completed, other };
   }, [orderThreads]);
 

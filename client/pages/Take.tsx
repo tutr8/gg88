@@ -41,8 +41,8 @@ export default function Take() {
         if (!mounted) return;
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const json = await r.json().catch(() => ({ items: [] }));
-        setOffers(
-          (json.items || []).map((d: any) => ({
+        {
+          const mapped = (json.items || []).map((d: any) => ({
             id: String(d.id ?? crypto.randomUUID()),
             title: String(d.title ?? ""),
             description: String(d.description ?? ""),
@@ -50,8 +50,17 @@ export default function Take() {
             status: String(d.status ?? "open"),
             createdAt: String(d.createdAt ?? new Date().toISOString()),
             imageUrl: d.imageUrl ?? null,
-          })),
-        );
+          }));
+          const seen = new Set<string>();
+          const deduped: Offer[] = [];
+          for (let i = mapped.length - 1; i >= 0; i--) {
+            const it = mapped[i];
+            if (seen.has(it.id)) continue;
+            seen.add(it.id);
+            deduped.unshift(it);
+          }
+          setOffers(deduped);
+        }
       } catch (e) {
         // Be resilient: show empty list instead of an error banner
         setOffers([]);
@@ -87,7 +96,9 @@ export default function Take() {
           />
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 mb-16"> {/* ДОБАВЛЕНО: mb-32 */}
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 mb-16">
+          {" "}
+          {/* ДОБАВЛЕНО: mb-32 */}
           {loading &&
             Array.from({ length: 6 }).map((_, i) => (
               <div
@@ -98,19 +109,16 @@ export default function Take() {
                 <div className="h-4 w-3/4 rounded bg-white/10" />
               </div>
             ))}
-
           {error && (
             <div className="col-span-2 rounded-lg border border-red-600 bg-red-900/30 p-3 text-xs text-red-200">
               Failed to load offers: {error}
             </div>
           )}
-
           {!loading && !error && offers.length === 0 && (
             <div className="col-span-2 rounded-lg border border-white/10 bg-white/5 p-4 text-center text-white/70">
               No offers yet. Be the first to create one.
             </div>
           )}
-
           {offers.map((o) => (
             <div
               key={o.id}
@@ -183,7 +191,7 @@ export default function Take() {
             </div>
           ))}
         </div>
-        
+
         {/* ДОБАВЛЕНО: Пустой div для создания дополнительного пространства */}
         <div className="h-32"></div>
       </div>

@@ -10,6 +10,7 @@ interface ConversationDetail {
   kind: string;
   orderId?: string | null;
   title?: string | null;
+  deadlineISO?: string | null;
 }
 
 interface Message {
@@ -67,6 +68,7 @@ export default function ChatRoom() {
         kind: String(data.conversation?.kind ?? "unknown"),
         orderId: data.conversation?.orderId ?? null,
         title: data.conversation?.metadata?.title ?? null,
+        deadlineISO: data.conversation?.metadata?.deadlineISO ?? null,
       });
       const mapped = (data.messages ?? []).map((m: any) => ({
         id: String(m.id),
@@ -74,7 +76,22 @@ export default function ChatRoom() {
         text: String(m.text || ""),
         createdAt: String(m.createdAt || new Date().toISOString()),
       }));
-      setMessages(mapped);
+      // Deduplicate by id and by content signature within a short window
+      const byId = new Set<string>();
+      const bySig = new Set<string>();
+      const windowMs = 30_000; // 30s window for same-sender same-text
+      const deduped: Message[] = [];
+      for (let i = 0; i < mapped.length; i++) {
+        const msg = mapped[i];
+        if (byId.has(msg.id)) continue;
+        const ts = Date.parse(msg.createdAt) || 0;
+        const sig = `${msg.sender}\u0001${msg.text}\u0001${Math.floor(ts / windowMs)}`;
+        if (bySig.has(sig)) continue;
+        byId.add(msg.id);
+        bySig.add(sig);
+        deduped.push(msg);
+      }
+      setMessages(deduped);
       setError(null);
       setTimeout(
         () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
@@ -107,15 +124,31 @@ export default function ChatRoom() {
         const data = JSON.parse(e.data || "{}");
         if (String(data.conversationId || "") !== String(id)) return;
         const m = data.message || {};
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: String(m.id || Math.random()),
-            sender: String(m.address || ""),
-            text: String(m.text || ""),
-            createdAt: String(m.createdAt || new Date().toISOString()),
-          },
-        ]);
+        const newMsg: Message = {
+          id: String(m.id || Math.random()),
+          sender: String(m.address || ""),
+          text: String(m.text || ""),
+          createdAt: String(m.createdAt || new Date().toISOString()),
+        };
+        setMessages((prev) => {
+          // By id
+          const existsById = prev.some((x) => x.id === newMsg.id);
+          if (existsById) {
+            return prev.map((x) => (x.id === newMsg.id ? newMsg : x));
+          }
+          // By content signature within 15s window
+          const tsNew = Date.parse(newMsg.createdAt) || Date.now();
+          const existsBySig = prev.some((x) => {
+            const tsX = Date.parse(x.createdAt) || 0;
+            return (
+              x.sender === newMsg.sender &&
+              x.text === newMsg.text &&
+              Math.abs(tsX - tsNew) <= 15_000
+            );
+          });
+          if (existsBySig) return prev;
+          return [...prev, newMsg];
+        });
         setTimeout(
           () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
           30,
@@ -172,41 +205,13 @@ export default function ChatRoom() {
 
     setText("");
 
-    // Optimistic append
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: String(Math.random()),
-        sender: me,
-        text,
-        createdAt: new Date().toISOString(),
-      },
-    ]);
-    setTimeout(
-      () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
-      10,
-    );
-
     const res = await fetch(apiUrl(`/api/inbox`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
     try {
-      const data = await res.json();
-      if (data?.item?.id) {
-        setMessages((prev) => {
-          const copy = [...prev];
-          // Replace last optimistic if same sender and text
-          for (let i = copy.length - 1; i >= 0; i--) {
-            if (copy[i].sender === me && copy[i].text === text) {
-              copy[i] = { ...copy[i], id: String(data.item.id) } as any;
-              break;
-            }
-          }
-          return copy;
-        });
-      }
+      await res.json();
     } catch {}
 
     // Mark read (self)
@@ -222,10 +227,15 @@ export default function ChatRoom() {
   return (
     <div className="h-screen overflow-hidden bg-[hsl(217,33%,9%)] text-white flex flex-col">
       <div className="flex-1 min-h-0 w-full max-w-2xl mx-auto flex flex-col px-4 py-4 mb-[calc(160px+env(safe-area-inset-bottom))]">
-        <div className="mb-2 text-lg font-semibold truncate flex-shrink-0">
+        <div className="mb-1 text-lg font-semibold truncate flex-shrink-0">
           {conversation?.title ||
             (conversation?.kind === "favorites" ? "Favorites" : "Chat")}
         </div>
+        {conversation?.deadlineISO && (
+          <div className="mb-2 text-xs text-white/60">
+            Deadline: {new Date(conversation.deadlineISO).toLocaleString()}
+          </div>
+        )}
 
         {!me && (
           <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-white/70">
