@@ -73,7 +73,7 @@ export default function Chat() {
           createdAt: String(o.createdAt || new Date().toISOString()),
         }));
 
-        const nextConversations = (
+        const mappedConversations = (
           (conversationsJson.conversations ?? []) as any[]
         ).map((c) => ({
           id: String(c.id),
@@ -90,6 +90,15 @@ export default function Chat() {
             : null,
           unreadCount: Number(c.unreadCount ?? 0),
         }));
+        // Deduplicate by id (keep last occurrence)
+        const seen = new Set<string>();
+        const nextConversations: typeof mappedConversations = [];
+        for (let i = mappedConversations.length - 1; i >= 0; i--) {
+          const it = mappedConversations[i];
+          if (seen.has(it.id)) continue;
+          seen.add(it.id);
+          nextConversations.unshift(it);
+        }
 
         setOrders(nextOrders);
         setConversations(nextConversations);
@@ -121,7 +130,7 @@ export default function Chat() {
         const conversationsJson = conversationsRes.ok
           ? await conversationsRes.json()
           : { conversations: [] };
-        const nextConversations = (
+        const mappedConversations = (
           (conversationsJson.conversations ?? []) as any[]
         ).map((c) => ({
           id: String(c.id),
@@ -138,6 +147,15 @@ export default function Chat() {
             : null,
           unreadCount: Number(c.unreadCount ?? 0),
         }));
+        // Deduplicate by id (keep last occurrence)
+        const seen = new Set<string>();
+        const nextConversations: typeof mappedConversations = [];
+        for (let i = mappedConversations.length - 1; i >= 0; i--) {
+          const it = mappedConversations[i];
+          if (seen.has(it.id)) continue;
+          seen.add(it.id);
+          nextConversations.unshift(it);
+        }
         setConversations(nextConversations);
       } catch {}
     };
